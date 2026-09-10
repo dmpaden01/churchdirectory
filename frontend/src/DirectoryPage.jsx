@@ -5,13 +5,14 @@ import FamilyForm from './components/FamilyForm';
 import ImportPdf from './components/ImportPdf';
 import UserManagement from './components/UserManagement';
 import ChangePasswordForm from './components/ChangePasswordForm';
+import SettingsPage from './SettingsPage';
 import { getFamily } from './api/families';
 import { logout } from './api/auth';
 import './DirectoryPage.css';
 
 const FAMILY_VIEWS = ['search', 'viewFamily', 'form', 'import', 'import-form'];
 
-// view: 'search' | 'viewFamily' | 'form' | 'import' | 'import-form' | 'users' | 'account'
+// view: 'search' | 'viewFamily' | 'form' | 'import' | 'import-form' | 'users' | 'settings' | 'account'
 // Shared between admins and regular users: everyone can search and view families;
 // only admins get the edit/add/import/user-management actions.
 export default function DirectoryPage({ user, onLoggedOut }) {
@@ -124,6 +125,15 @@ export default function DirectoryPage({ user, onLoggedOut }) {
             Users
           </button>
         )}
+        {isAdmin && (
+          <button
+            type="button"
+            className={view === 'settings' ? 'active' : ''}
+            onClick={() => setView('settings')}
+          >
+            Settings
+          </button>
+        )}
         <button
           type="button"
           className={view === 'account' ? 'active' : ''}
@@ -136,6 +146,8 @@ export default function DirectoryPage({ user, onLoggedOut }) {
       {loadingFamily && <p className="family-search-status">Loading family...</p>}
 
       {view === 'users' && isAdmin && <UserManagement currentUser={user} />}
+
+      {view === 'settings' && isAdmin && <SettingsPage />}
 
       {view === 'account' && <ChangePasswordForm />}
 

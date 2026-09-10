@@ -3,6 +3,7 @@ import DirectoryPage from './DirectoryPage';
 import LoginPage from './LoginPage';
 import SetPasswordPage from './SetPasswordPage';
 import { getCurrentUser } from './api/auth';
+import { applyDynamicFavicon } from './utils/applyFavicon';
 import './App.css';
 
 function getSetPasswordToken() {
@@ -13,6 +14,10 @@ function App() {
   const [status, setStatus] = useState('loading'); // 'loading' | 'anonymous' | 'authenticated'
   const [user, setUser] = useState(null);
   const [setPasswordToken, setSetPasswordToken] = useState(getSetPasswordToken);
+
+  useEffect(() => {
+    applyDynamicFavicon();
+  }, []);
 
   useEffect(() => {
     getCurrentUser()

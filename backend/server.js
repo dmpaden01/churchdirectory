@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import familiesRouter from './routes/families.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
+import settingsRouter from './routes/settings.js';
 import { requireAuth } from './middleware/auth.js';
 
 dotenv.config();
@@ -28,6 +29,9 @@ app.get('/api/test', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
+// Not gated by requireAuth at the mount level - the favicon GET must be
+// public (needed before login); the write routes self-protect inside.
+app.use('/api/settings', settingsRouter);
 // Read access (search/view/photos) is open to any signed-in user; write routes
 // (create/update/delete/import) enforce admin themselves within familiesRouter.
 app.use('/api/families', requireAuth, familiesRouter);
