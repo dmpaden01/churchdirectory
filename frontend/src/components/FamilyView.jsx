@@ -1,4 +1,4 @@
-import { familyPhotoUrl, individualPhotoUrl } from '../api/families';
+import { familyPhotoUrl } from '../api/families';
 import './FamilyView.css';
 
 const ROLE_LABELS = {
@@ -12,19 +12,30 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString('en-US', { timeZone: 'UTC' });
 }
 
-function Field({ label, value }) {
-  if (!value) return null;
+// One person, condensed onto a single line: name, role tag, then whatever
+// details are actually present, separated by dots.
+function MemberLine({ individual }) {
+  const details = [
+    individual.gender,
+    individual.cellPhone,
+    individual.email,
+    formatDate(individual.birthday),
+  ].filter(Boolean);
+
   return (
-    <div className="view-field">
-      <span className="view-field-label">{label}</span>
-      <span className="view-field-value">{value}</span>
-    </div>
+    <p className="family-member-line">
+      <strong>{individual.firstName} {individual.lastName}</strong>
+      <span className="member-role-tag">{ROLE_LABELS[individual.role]}</span>
+      {details.length > 0 && <span className="member-details">{details.join(' · ')}</span>}
+    </p>
   );
 }
 
-// Read-only display of a family, visible to any signed-in user.
+// Read-only display of a family, visible to any signed-in user. Laid out as a
+// single compact card: photo on the left, member lines and mailing-style
+// address on the right.
 export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
-  const address = [family.address, family.aptSuite].filter(Boolean).join(', ');
+  const streetLine = [family.address, family.aptSuite].filter(Boolean).join(', ');
   const cityStateZip = [
     [family.city, family.state].filter(Boolean).join(', '),
     family.zipCode,
@@ -41,41 +52,30 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
         )}
       </div>
 
-      <section className="form-section">
-        <div className="family-view-info">
-          <img
-            src={familyPhotoUrl(family) || '/default-avatar.svg'}
-            alt=""
-            className="family-view-photo"
-          />
-          <div className="view-fields-grid">
-            <Field label="Address" value={address} />
-            <Field label="City / State / Zip" value={cityStateZip} />
-            <Field label="Home Phone" value={family.homePhone} />
-            <Field label="Anniversary" value={formatDate(family.anniversary)} />
-          </div>
-        </div>
-      </section>
+      <div className="family-card">
+        <img
+          src={familyPhotoUrl(family) || '/default-avatar.svg'}
+          alt=""
+          className="family-card-photo"
+        />
 
-      <section className="form-section">
-        <h3>Family Members</h3>
-        {family.individuals.map((individual, index) => (
-          <div className="family-view-individual" key={individual._id || index}>
-            <img
-              src={individualPhotoUrl(family._id, index, individual) || '/default-avatar.svg'}
-              alt=""
-              className="family-view-photo family-view-photo-small"
-            />
-            <div className="view-fields-grid">
-              <Field label={ROLE_LABELS[individual.role]} value={`${individual.firstName} ${individual.lastName}`} />
-              <Field label="Gender" value={individual.gender} />
-              <Field label="Cell Phone" value={individual.cellPhone} />
-              <Field label="Email" value={individual.email} />
-              <Field label="Birthday" value={formatDate(individual.birthday)} />
-            </div>
+        <div className="family-card-body">
+          <div className="family-card-members">
+            {family.individuals.map((individual, index) => (
+              <MemberLine individual={individual} key={individual._id || index} />
+            ))}
           </div>
-        ))}
-      </section>
+
+          <address className="family-card-address">
+            {streetLine && <div>{streetLine}</div>}
+            {cityStateZip && <div>{cityStateZip}</div>}
+            {family.homePhone && <div className="family-card-extra">{family.homePhone}</div>}
+            {family.anniversary && (
+              <div className="family-card-extra">Anniversary: {formatDate(family.anniversary)}</div>
+            )}
+          </address>
+        </div>
+      </div>
 
       <div className="form-actions">
         <button type="button" onClick={onBack}>Back to Search</button>
