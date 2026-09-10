@@ -58,6 +58,27 @@ npm run dev
 
 The Vite dev server proxies `/api` to `http://localhost:5000`.
 
+## Production deployment (Docker)
+
+Three containers, built from `docker-compose.yml` at the repo root:
+
+- `churchdirectory-frontend` - nginx serving the built React app, proxying `/api/*` internally to the backend so the browser only ever talks to one origin
+- `churchdirectory-backend` - the Express API
+- `churchdirectory-db` - official `mongo` image, with a named volume (`churchdirectory-db-data`) so data survives container restarts/recreation
+
+```bash
+cp .env.example .env    # fill in real values - see comments in the file
+docker compose up -d --build
+```
+
+The app is then served on `http://<host>:${HTTP_PORT:-80}`.
+
+Notes:
+- This has been written but **not yet run** - it's meant to be tested on a Linux Docker host.
+- `backend/.env` (local dev) and the root `.env` (Docker Compose) are separate files with an overlapping but not identical set of variables - see the comments in `.env.example` for what's different (notably `MONGO_ROOT_USERNAME`/`MONGO_ROOT_PASSWORD` for bootstrapping the db container, and `COOKIE_SECURE` for HTTP-only deployments without TLS yet).
+- Auth cookies default to `Secure` (HTTPS-only) in production. If you don't have TLS in front of this yet, set `COOKIE_SECURE=false` in `.env` or login will silently never persist a session in the browser.
+- The backend and db containers aren't published to the host by default (only reachable from the frontend container over the internal `churchdirectory-net` network) - only the frontend's port is exposed.
+
 ## Features
 
 - Family/individual CRUD with dynamic spouse/child entries

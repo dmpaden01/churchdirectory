@@ -13,10 +13,17 @@ const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function cookieOptions() {
+  // Secure cookies require HTTPS, so default to on in production but allow an
+  // explicit override for deployments running behind plain HTTP (e.g. an
+  // internal network without TLS yet) - otherwise login would silently never
+  // persist a cookie in the browser.
+  const secure = process.env.COOKIE_SECURE
+    ? process.env.COOKIE_SECURE === 'true'
+    : process.env.NODE_ENV === 'production';
   return {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure,
     maxAge: COOKIE_MAX_AGE_MS,
     path: '/',
   };
