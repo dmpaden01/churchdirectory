@@ -8,6 +8,7 @@ import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import settingsRouter from './routes/settings.js';
 import { requireAuth } from './middleware/auth.js';
+import { seedAdminUser } from './utils/seedAdmin.js';
 
 dotenv.config();
 
@@ -20,7 +21,10 @@ app.use(cookieParser());
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('🍃 MongoDB Connected Successfully'))
+  .then(async () => {
+    console.log('🍃 MongoDB Connected Successfully');
+    await seedAdminUser();
+  })
   .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
 // Test API Route

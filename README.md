@@ -40,7 +40,7 @@ BACKEND_PUBLIC_URL=http://localhost:5000
 FRONTEND_PUBLIC_URL=http://localhost:5173
 ```
 
-Bootstrap the first admin account (the in-app "create user" flow needs an admin to already exist):
+The first admin account (the in-app "create user" flow needs an admin to already exist) is bootstrapped automatically on startup if `ADMIN_USERNAME`/`ADMIN_PASSWORD` are set in `.env` (idempotent - it only creates the account if that username doesn't exist yet, so it's safe to leave set). Without those vars, create it manually instead:
 
 ```bash
 node scripts/createUser.js <username> <password> admin
@@ -77,8 +77,13 @@ docker compose up -d --build
 
 The app is then served on `http://<host>:${HTTP_PORT:-80}`.
 
+If `ADMIN_USERNAME`/`ADMIN_PASSWORD` are set in `.env`, the first admin account is created automatically on startup (see comments in `.env.example`). Otherwise, bootstrap it manually:
+
+```bash
+docker compose exec churchdirectory-backend node scripts/createUser.js <username> <password> admin
+```
+
 Notes:
-- This has been written but **not yet run** - it's meant to be tested on a Linux Docker host.
 - `backend/.env` (local dev) and the root `.env` (Docker Compose) are separate files with an overlapping but not identical set of variables - see the comments in `.env.example` for what's different (notably `MONGO_ROOT_USERNAME`/`MONGO_ROOT_PASSWORD` for bootstrapping the db container, and `COOKIE_SECURE` for HTTP-only deployments without TLS yet).
 - Auth cookies default to `Secure` (HTTPS-only) in production. If you don't have TLS in front of this yet, set `COOKIE_SECURE=false` in `.env` or login will silently never persist a session in the browser.
 - The backend and db containers aren't published to the host by default (only reachable from the frontend container over the internal `churchdirectory-net` network) - only the frontend's port is exposed.
