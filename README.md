@@ -4,20 +4,20 @@ A full-stack church directory admin tool: manage families and individuals, uploa
 
 ## Stack
 
-- **Client:** React + Vite (`client/`)
-- **Server:** Node.js + Express (`server/`)
+- **Frontend:** React + Vite (`frontend/`)
+- **Backend:** Node.js + Express (`backend/`)
 - **Database:** MongoDB (via Mongoose)
 
 ## Getting started
 
-### 1. Server
+### 1. Backend
 
 ```bash
-cd server
+cd backend
 npm install
 ```
 
-Create `server/.env` (not committed) with:
+Create `backend/.env` (not committed) with:
 
 ```
 PORT=5000
@@ -31,16 +31,16 @@ Bootstrap the first admin account (the in-app "create user" flow needs an admin 
 node scripts/createUser.js <username> <password> admin
 ```
 
-Start the server:
+Start the backend:
 
 ```bash
 npm run dev
 ```
 
-### 2. Client
+### 2. Frontend
 
 ```bash
-cd client
+cd frontend
 npm install
 npm run dev
 ```
@@ -50,12 +50,12 @@ The Vite dev server proxies `/api` and `/uploads` to `http://localhost:5000`.
 ## Features
 
 - Family/individual CRUD with dynamic spouse/child entries
-- Drag-and-drop photo upload for families and individuals, stored on the server filesystem with the path recorded in MongoDB
+- Drag-and-drop photo upload for families and individuals, stored on the backend filesystem with the path recorded in MongoDB
 - Search families by last name
 - Import families from a legacy directory PDF export, including best-effort photo extraction, with a per-family review step before anything is saved
 - Username/password login with `admin` and `user` roles; admins manage the directory and other user accounts; users can change their own password
 
 ## Notes
 
-- `server/uploads/` holds uploaded photos and is intentionally not committed — in production this is meant to be a mounted Docker volume on the host.
-- `.env` files are intentionally not committed; see the server setup above for the variables needed.
+- `backend/uploads/` holds uploaded photos and is intentionally not committed — in production this is meant to be a mounted Docker volume on the host.
+- `.env` files are intentionally not committed; see the backend setup above for the variables needed.

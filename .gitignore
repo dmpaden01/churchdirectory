@@ -14,4 +14,4 @@ node_modules/
 .env.*.local
 
 # Uploaded family/individual photos (runtime data, not source)
-server/uploads/
+backend/uploads/
