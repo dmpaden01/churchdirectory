@@ -10,6 +10,10 @@ function getTransporter() {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true', // false = STARTTLS on 587, true = implicit TLS on 465
+      // Hostname sent in the SMTP EHLO/HELO greeting. Defaults to the machine's OS
+      // hostname (e.g. "DESKTOP-AB12CD3" on Windows) if unset, which isn't a real
+      // domain and some mail servers penalize; set it to the sending domain instead.
+      name: process.env.SMTP_CLIENT_NAME || undefined,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
