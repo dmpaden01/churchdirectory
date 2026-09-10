@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
-import { listUsers, createUser, deleteUser } from '../api/users';
+import { listUsers, createUser, deleteUser, approveUser, denyUser } from '../api/users';
 import ResetPasswordForm from './ResetPasswordForm';
 import './UserManagement.css';
 
 const emptyForm = { username: '', password: '', role: 'user' };
 
-// Admin-only screen for viewing accounts and creating new ones.
+const STATUS_LABELS = {
+  pending_verification: 'Awaiting Email Verification',
+  denied: 'Denied',
+};
+
+// Admin-only screen for viewing accounts, approving/denying registrations, and creating new ones.
 export default function UserManagement({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +21,8 @@ export default function UserManagement({ currentUser }) {
   const [formError, setFormError] = useState(null);
   const [resetTargetId, setResetTargetId] = useState(null);
   const [resetMessage, setResetMessage] = useState(null);
+  const [decidingId, setDecidingId] = useState(null);
+  const [decisionError, setDecisionError] = useState(null);
 
   const loadUsers = () => {
     setLoading(true);
@@ -54,6 +61,36 @@ export default function UserManagement({ currentUser }) {
       alert(err.message);
     }
   };
+
+  const handleApprove = async (user) => {
+    setDecidingId(user._id);
+    setDecisionError(null);
+    try {
+      await approveUser(user._id);
+      loadUsers();
+    } catch (err) {
+      setDecisionError(err.message);
+    } finally {
+      setDecidingId(null);
+    }
+  };
+
+  const handleDeny = async (user) => {
+    if (!window.confirm(`Deny the registration request from ${user.firstName} ${user.lastName}?`)) return;
+    setDecidingId(user._id);
+    setDecisionError(null);
+    try {
+      await denyUser(user._id);
+      loadUsers();
+    } catch (err) {
+      setDecisionError(err.message);
+    } finally {
+      setDecidingId(null);
+    }
+  };
+
+  const pending = users.filter((u) => u.status === 'pending_approval');
+  const others = users.filter((u) => u.status !== 'pending_approval');
 
   return (
     <div className="user-management">
@@ -101,14 +138,54 @@ export default function UserManagement({ currentUser }) {
       {error && <div className="form-error">{error}</div>}
       {loading && <p className="family-search-status">Loading...</p>}
 
+      {!loading && pending.length > 0 && (
+        <div className="pending-approval-section">
+          <h3>Pending Approval</h3>
+          {decisionError && <div className="form-error">{decisionError}</div>}
+          <ul className="user-list">
+            {pending.map((user) => (
+              <li key={user._id} className="user-list-item">
+                <div className="user-list-row">
+                  <div className="user-list-info">
+                    <strong>{user.firstName} {user.lastName}</strong>
+                    <span className="pending-email">{user.username}</span>
+                  </div>
+                  <div className="user-list-actions">
+                    <button
+                      type="button"
+                      className="primary-btn"
+                      onClick={() => handleApprove(user)}
+                      disabled={decidingId === user._id}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-btn-outline"
+                      onClick={() => handleDeny(user)}
+                      disabled={decidingId === user._id}
+                    >
+                      Deny
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {!loading && (
         <ul className="user-list">
-          {users.map((user) => (
+          {others.map((user) => (
             <li key={user._id} className="user-list-item">
               <div className="user-list-row">
                 <div className="user-list-info">
-                  <strong>{user.username}</strong>
+                  <strong>{user.firstName || user.lastName ? `${user.firstName} ${user.lastName}`.trim() : user.username}</strong>
                   <span className={`role-badge role-${user.role}`}>{user.role}</span>
+                  {STATUS_LABELS[user.status] && (
+                    <span className="status-badge">{STATUS_LABELS[user.status]}</span>
+                  )}
                 </div>
                 <div className="user-list-actions">
                   <button

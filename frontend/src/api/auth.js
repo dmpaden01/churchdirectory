@@ -36,3 +36,28 @@ export async function changePassword(currentPassword, newPassword) {
     throw new Error(err.error || 'Failed to change password');
   }
 }
+
+export async function register(email, firstName, lastName) {
+  const res = await fetch(`${BASE_URL}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, firstName, lastName }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Registration failed');
+  }
+  return res.json();
+}
+
+export async function setPassword(token, password) {
+  const res = await fetch(`${BASE_URL}/set-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to set password');
+  }
+}

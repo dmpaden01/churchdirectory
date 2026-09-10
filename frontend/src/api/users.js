@@ -31,6 +31,24 @@ export async function resetUserPassword(id, newPassword) {
   }
 }
 
+export async function approveUser(id) {
+  const res = await fetch(`${BASE_URL}/${id}/approve`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to approve user');
+  }
+  return res.json();
+}
+
+export async function denyUser(id) {
+  const res = await fetch(`${BASE_URL}/${id}/deny`, { method: 'POST' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to deny user');
+  }
+  return res.json();
+}
+
 export async function deleteUser(id) {
   const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
   if (!res.ok && res.status !== 204) {

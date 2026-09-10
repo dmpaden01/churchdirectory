@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { login } from './api/auth';
+import RegisterForm from './components/RegisterForm';
 import './LoginPage.css';
 
 export default function LoginPage({ onLoggedIn }) {
+  const [mode, setMode] = useState('signin'); // 'signin' | 'register'
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -21,6 +23,14 @@ export default function LoginPage({ onLoggedIn }) {
       setSubmitting(false);
     }
   };
+
+  if (mode === 'register') {
+    return (
+      <div className="login-page">
+        <RegisterForm onBackToSignIn={() => setMode('signin')} />
+      </div>
+    );
+  }
 
   return (
     <div className="login-page">
@@ -53,6 +63,9 @@ export default function LoginPage({ onLoggedIn }) {
 
         <button type="submit" className="primary-btn" disabled={submitting}>
           {submitting ? 'Signing in...' : 'Sign In'}
+        </button>
+        <button type="button" onClick={() => setMode('register')}>
+          Request an Account
         </button>
       </form>
     </div>

@@ -101,7 +101,7 @@
   color: var(--text);
 }
 
-.user-list-actions button {
+.user-list-actions button:not(.primary-btn) {
   border: 1px solid var(--border);
   color: var(--text-h);
   background: none;
@@ -114,6 +114,39 @@
 .user-list-actions button.danger-btn-outline {
   border-color: #dc2626;
   color: #dc2626;
+}
+
+.pending-approval-section {
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.pending-approval-section h3 {
+  margin: 0 0 12px;
+  color: var(--text-h);
+}
+
+.pending-approval-section .user-list-item {
+  background: var(--bg);
+}
+
+.pending-email {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(217, 119, 6, 0.15);
+  color: #d97706;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .reset-password-form {

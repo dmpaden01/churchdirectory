@@ -1,23 +1,28 @@
 import express from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
+import { sendApprovalEmail, sendDenialEmail } from '../utils/mailer.js';
 
 const router = express.Router();
 
+const PASSWORD_SETUP_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
+const USER_FIELDS = 'username role status firstName lastName createdAt';
+
 router.use(requireAuth, requireRole('admin'));
 
-// GET /api/users - list all users (admin only)
+// GET /api/users - list all users, including pending registrations (admin only)
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find({}, 'username role createdAt').sort({ username: 1 }).lean();
+    const users = await User.find({}, USER_FIELDS).sort({ username: 1 }).lean();
     res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST /api/users - create a new user (admin only)
+// POST /api/users - create a new user directly (admin only)
 router.post('/', async (req, res) => {
   try {
     const { username, password, role } = req.body;
@@ -36,8 +41,55 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'That username is already taken.' });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({ username: normalizedUsername, passwordHash, role });
+    const user = await User.create({ username: normalizedUsername, passwordHash, role, status: 'active' });
     res.status(201).json({ _id: user._id, username: user.username, role: user.role, createdAt: user.createdAt });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/users/:id/approve - approve a pending registration (admin only)
+router.post('/:id/approve', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.status !== 'pending_approval') {
+      return res.status(400).json({ error: 'Only registrations awaiting approval can be approved.' });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // Send first: if it fails, leave the user in pending_approval rather than
+    // silently marking them active with a setup link they never received.
+    await sendApprovalEmail(user.username, user.firstName || '', token);
+
+    user.status = 'active';
+    user.passwordSetupToken = token;
+    user.passwordSetupTokenExpires = new Date(Date.now() + PASSWORD_SETUP_TTL_MS);
+    await user.save();
+    res.json({ _id: user._id, username: user.username, status: user.status });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/users/:id/deny - deny a pending registration (admin only)
+router.post('/:id/deny', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.status !== 'pending_approval') {
+      return res.status(400).json({ error: 'Only registrations awaiting approval can be denied.' });
+    }
+
+    // Send first, same reasoning as approve: don't mark denied if they'll never know why.
+    await sendDenialEmail(user.username, user.firstName || '');
+
+    user.status = 'denied';
+    user.emailVerifyToken = undefined;
+    user.emailVerifyTokenExpires = undefined;
+    await user.save();
+    res.json({ _id: user._id, username: user.username, status: user.status });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
