@@ -182,6 +182,9 @@ export default function UserManagement({ currentUser }) {
               <div className="user-list-row">
                 <div className="user-list-info">
                   <strong>{user.firstName || user.lastName ? `${user.firstName} ${user.lastName}`.trim() : user.username}</strong>
+                  {(user.firstName || user.lastName) && (
+                    <span className="pending-email">{user.username}</span>
+                  )}
                   <span className={`role-badge role-${user.role}`}>{user.role}</span>
                   {STATUS_LABELS[user.status] && (
                     <span className="status-badge">{STATUS_LABELS[user.status]}</span>
