@@ -42,6 +42,10 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
     [family.city, family.state].filter(Boolean).join(', '),
     family.zipCode,
   ].filter(Boolean).join(' ');
+  const fullAddress = [streetLine, cityStateZip].filter(Boolean).join(', ');
+  const mapsUrl = fullAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
+    : null;
 
   return (
     <div className="family-view">
@@ -69,8 +73,17 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
           </div>
 
           <address className="family-card-address">
-            {streetLine && <div>{streetLine}</div>}
-            {cityStateZip && <div>{cityStateZip}</div>}
+            {mapsUrl ? (
+              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="family-card-address-link">
+                {streetLine && <div>{streetLine}</div>}
+                {cityStateZip && <div>{cityStateZip}</div>}
+              </a>
+            ) : (
+              <>
+                {streetLine && <div>{streetLine}</div>}
+                {cityStateZip && <div>{cityStateZip}</div>}
+              </>
+            )}
             {family.homePhone && <div className="family-card-extra">{family.homePhone}</div>}
             {family.anniversary && (
               <div className="family-card-extra">Anniversary: {formatDate(family.anniversary)}</div>

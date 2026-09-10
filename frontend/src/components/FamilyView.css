@@ -80,6 +80,17 @@
   border-top: 1px solid var(--border);
 }
 
+.family-card-address-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.family-card-address-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .family-card-extra {
   color: var(--text);
   font-size: 0.85rem;
