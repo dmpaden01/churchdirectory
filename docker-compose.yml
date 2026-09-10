@@ -47,16 +47,28 @@ services:
       context: ./frontend
     container_name: churchdirectory-frontend
     restart: unless-stopped
+    # Only needed for direct/local access. If you're routing all traffic
+    # through a reverse proxy (e.g. Nginx Proxy Manager) on the npm-network
+    # below, you can remove this - NPM reaches the container by name instead.
     ports:
       - "${HTTP_PORT:-80}:80"
     depends_on:
       - churchdirectory-backend
     networks:
       - churchdirectory-net
+      - npm-network
 
 networks:
   churchdirectory-net:
     name: churchdirectory-net
+  # Shared network with your reverse proxy (e.g. Nginx Proxy Manager), so it
+  # can reach this container by name (churchdirectory-frontend:80) instead of
+  # going back out through the host's published port. Must already exist -
+  # either it's the network NPM's own compose file created, or create it
+  # yourself first with: docker network create <name>
+  npm-network:
+    external: true
+    name: ${NPM_NETWORK_NAME:-npm-network}
 
 volumes:
   churchdirectory-db-data:

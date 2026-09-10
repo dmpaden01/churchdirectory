@@ -79,6 +79,16 @@ Notes:
 - Auth cookies default to `Secure` (HTTPS-only) in production. If you don't have TLS in front of this yet, set `COOKIE_SECURE=false` in `.env` or login will silently never persist a session in the browser.
 - The backend and db containers aren't published to the host by default (only reachable from the frontend container over the internal `churchdirectory-net` network) - only the frontend's port is exposed.
 
+### Behind a reverse proxy (e.g. Nginx Proxy Manager)
+
+`churchdirectory-frontend` joins a second, external Docker network (`npm-network` by default, set via `NPM_NETWORK_NAME` in `.env`) so a reverse proxy handling TLS can reach it directly by container name instead of going back out through the host's published port.
+
+1. Make sure that network already exists - it's whatever Docker network your reverse proxy's own stack uses (`docker network ls` to check, or look at its compose file). Set `NPM_NETWORK_NAME` in `.env` to match.
+2. In the proxy (e.g. NPM's UI), add a proxy host pointing at `churchdirectory-frontend` on port `80`, with SSL/Let's Encrypt handled there.
+3. Leave `COOKIE_SECURE=true` - the browser's connection to the proxy is real HTTPS even though the proxy talks to this app over plain HTTP internally, and that's what the cookie's `Secure` flag actually depends on.
+4. Set `BACKEND_PUBLIC_URL` and `FRONTEND_PUBLIC_URL` to the real public HTTPS domain configured in the proxy (both the same - see the "Public URLs" note above).
+5. The `HTTP_PORT` host publish in `docker-compose.yml` can be left in place (harmless fallback for direct access) or removed if you want the app reachable only through the proxy.
+
 ## Features
 
 - Family/individual CRUD with dynamic spouse/child entries
