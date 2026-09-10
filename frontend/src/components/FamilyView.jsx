@@ -47,6 +47,13 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
     : null;
 
+  // Belt-and-suspenders: href + target="_blank" alone is sometimes overridden by
+  // browser settings/extensions, so force a genuine new-tab/window open on click too.
+  const openMaps = (e) => {
+    e.preventDefault();
+    window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="family-view">
       <div className="family-view-header">
@@ -74,7 +81,13 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
 
           <address className="family-card-address">
             {mapsUrl ? (
-              <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="family-card-address-link">
+              <a
+                href={mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={openMaps}
+                className="family-card-address-link"
+              >
                 {streetLine && <div>{streetLine}</div>}
                 {cityStateZip && <div>{cityStateZip}</div>}
               </a>
