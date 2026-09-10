@@ -8,6 +8,10 @@ A full-stack church directory admin tool: manage families and individuals, uploa
 - **Backend:** Node.js + Express (`backend/`)
 - **Database:** MongoDB (via Mongoose)
 
+## Branding
+
+`frontend/public/favicon.svg` is a generic placeholder (a cross) so the repo works out of the box for anyone. For your own deployment, replace it with your organization's actual icon - just overwrite that file (any square SVG or PNG works; if you switch to PNG, update the `<link rel="icon">` in `frontend/index.html` to match).
+
 ## Getting started
 
 ### 1. Backend
