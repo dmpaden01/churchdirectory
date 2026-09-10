@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { searchFamilies } from '../api/families';
+import { searchFamilies, familyPhotoUrl } from '../api/families';
 import './FamilySearch.css';
 
 function headOf(family) {
@@ -52,7 +52,7 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refre
           return (
             <li key={family._id} onClick={() => onSelectFamily(family._id)}>
               <img
-                src={family.photoPath || '/default-avatar.svg'}
+                src={familyPhotoUrl(family) || '/default-avatar.svg'}
                 alt=""
                 className="family-result-photo"
               />

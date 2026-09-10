@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import IndividualFields from './IndividualFields';
 import PhotoDropzone from './PhotoDropzone';
-import { createFamily, updateFamily, deleteFamily } from '../api/families';
+import { createFamily, updateFamily, deleteFamily, familyPhotoUrl, individualPhotoUrl } from '../api/families';
 import './FamilyForm.css';
 
 function toDateInputValue(value) {
@@ -78,9 +78,9 @@ function familyToFormState(family, draft) {
     zipCode: family.zipCode || '',
     homePhone: family.homePhone || '',
     anniversary: toDateInputValue(family.anniversary),
-    photoPath: family.photoPath,
+    photoPath: familyPhotoUrl(family),
     removeFamilyPhoto: false,
-    individuals: family.individuals.map((ind) => ({
+    individuals: family.individuals.map((ind, index) => ({
       role: ind.role,
       firstName: ind.firstName || '',
       lastName: ind.lastName || '',
@@ -88,7 +88,7 @@ function familyToFormState(family, draft) {
       cellPhone: ind.cellPhone || '',
       email: ind.email || '',
       birthday: toDateInputValue(ind.birthday),
-      photoPath: ind.photoPath,
+      photoPath: individualPhotoUrl(family._id, index, ind),
       removePhoto: false,
     })),
   };

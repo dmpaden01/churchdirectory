@@ -2,6 +2,14 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
+const photoSchema = new Schema(
+  {
+    data: { type: Buffer, required: true },
+    contentType: { type: String, required: true },
+  },
+  { _id: false },
+);
+
 const individualSchema = new Schema({
   role: {
     type: String,
@@ -18,7 +26,7 @@ const individualSchema = new Schema({
   cellPhone: { type: String, trim: true },
   email: { type: String, trim: true },
   birthday: { type: Date },
-  photoPath: { type: String },
+  photo: { type: photoSchema },
 });
 
 const familySchema = new Schema(
@@ -31,7 +39,7 @@ const familySchema = new Schema(
     zipCode: { type: String, required: true, trim: true },
     homePhone: { type: String, trim: true },
     anniversary: { type: Date },
-    photoPath: { type: String },
+    photo: { type: photoSchema },
     individuals: {
       type: [individualSchema],
       validate: {

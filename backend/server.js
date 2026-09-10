@@ -1,7 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import path from 'path';
 import cookieParser from 'cookie-parser';
 import familiesRouter from './routes/families.js';
 import authRouter from './routes/auth.js';
@@ -16,9 +15,6 @@ const PORT = process.env.PORT || 5000;
 // Middleware to parse JSON payloads
 app.use(express.json());
 app.use(cookieParser());
-
-// Serve uploaded family/individual photos (signed-in users only)
-app.use('/uploads', requireAuth, express.static(path.join(process.cwd(), 'uploads')));
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)

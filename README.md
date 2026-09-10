@@ -45,17 +45,17 @@ npm install
 npm run dev
 ```
 
-The Vite dev server proxies `/api` and `/uploads` to `http://localhost:5000`.
+The Vite dev server proxies `/api` to `http://localhost:5000`.
 
 ## Features
 
 - Family/individual CRUD with dynamic spouse/child entries
-- Drag-and-drop photo upload for families and individuals, stored on the backend filesystem with the path recorded in MongoDB
+- Drag-and-drop photo upload for families and individuals, stored directly in MongoDB as binary data (served via `/api/families/:id/photo` and `/api/families/:id/individuals/:index/photo`) so all family data lives in one place
 - Search families by last name
 - Import families from a legacy directory PDF export, including best-effort photo extraction, with a per-family review step before anything is saved
 - Username/password login with `admin` and `user` roles; admins manage the directory and other user accounts; users can change their own password
 
 ## Notes
 
-- `backend/uploads/` holds uploaded photos and is intentionally not committed — in production this is meant to be a mounted Docker volume on the host.
 - `.env` files are intentionally not committed; see the backend setup above for the variables needed.
+- `backend/scripts/migratePhotosToBlob.js` was a one-time migration from an earlier filesystem-based photo storage design; kept for reference.

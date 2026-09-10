@@ -1,5 +1,15 @@
 const BASE_URL = '/api/families';
 
+// Photos are served from dedicated binary endpoints rather than embedded in the
+// JSON responses; these just build the <img src> for a family that has one saved.
+export function familyPhotoUrl(family) {
+  return family?.photo?.contentType ? `${BASE_URL}/${family._id}/photo` : undefined;
+}
+
+export function individualPhotoUrl(familyId, index, individual) {
+  return individual?.photo?.contentType ? `${BASE_URL}/${familyId}/individuals/${index}/photo` : undefined;
+}
+
 export async function searchFamilies(search) {
   const url = search ? `${BASE_URL}?search=${encodeURIComponent(search)}` : BASE_URL;
   const res = await fetch(url);
