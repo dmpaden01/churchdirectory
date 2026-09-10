@@ -1,0 +1,74 @@
+.family-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.family-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.family-view-header h2 {
+  margin: 0;
+  color: var(--text-h);
+}
+
+.family-view-info {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.family-view-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--code-bg);
+  flex-shrink: 0;
+}
+
+.family-view-photo-small {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+}
+
+.view-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  flex: 1;
+}
+
+.view-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.view-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.view-field-value {
+  color: var(--text-h);
+  font-size: 0.95rem;
+}
+
+.family-view-individual {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.family-view-individual:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}

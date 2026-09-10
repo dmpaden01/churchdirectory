@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import FamilySearch from './components/FamilySearch';
+import FamilyView from './components/FamilyView';
 import FamilyForm from './components/FamilyForm';
 import ImportPdf from './components/ImportPdf';
 import UserManagement from './components/UserManagement';
 import ChangePasswordForm from './components/ChangePasswordForm';
 import { getFamily } from './api/families';
 import { logout } from './api/auth';
-import './AdminPage.css';
+import './DirectoryPage.css';
 
-const FAMILY_VIEWS = ['search', 'form', 'import', 'import-form'];
+const FAMILY_VIEWS = ['search', 'viewFamily', 'form', 'import', 'import-form'];
 
-// view: 'search' | 'form' | 'import' | 'import-form' | 'users' | 'account'
-export default function AdminPage({ user, onLoggedOut }) {
+// view: 'search' | 'viewFamily' | 'form' | 'import' | 'import-form' | 'users' | 'account'
+// Shared between admins and regular users: everyone can search and view families;
+// only admins get the edit/add/import/user-management actions.
+export default function DirectoryPage({ user, onLoggedOut }) {
+  const isAdmin = user.role === 'admin';
   const [view, setView] = useState('search');
   const [activeFamily, setActiveFamily] = useState(null);
   const [loadingFamily, setLoadingFamily] = useState(false);
@@ -21,6 +25,7 @@ export default function AdminPage({ user, onLoggedOut }) {
   const [activeDraftKey, setActiveDraftKey] = useState(null);
 
   const openAddNew = () => {
+    if (!isAdmin) return;
     setActiveFamily(null);
     setView('form');
   };
@@ -30,12 +35,17 @@ export default function AdminPage({ user, onLoggedOut }) {
     try {
       const family = await getFamily(id);
       setActiveFamily(family);
-      setView('form');
+      setView('viewFamily');
     } catch (err) {
       alert(err.message);
     } finally {
       setLoadingFamily(false);
     }
+  };
+
+  const openEdit = () => {
+    if (!isAdmin) return;
+    setView('form');
   };
 
   const backToSearch = () => {
@@ -44,7 +54,15 @@ export default function AdminPage({ user, onLoggedOut }) {
     setRefreshToken((t) => t + 1);
   };
 
-  const openImport = () => setView('import');
+  const cancelForm = () => {
+    if (activeFamily) setView('viewFamily');
+    else backToSearch();
+  };
+
+  const openImport = () => {
+    if (!isAdmin) return;
+    setView('import');
+  };
 
   const familiesParsed = (families) => {
     setParsedFamilies(families);
@@ -82,7 +100,7 @@ export default function AdminPage({ user, onLoggedOut }) {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <h1>Church Directory Admin</h1>
+        <h1>Church Directory</h1>
         <div className="admin-header-right">
           <span className="admin-current-user">Signed in as {user.username}</span>
           <button type="button" onClick={handleLogout}>Sign Out</button>
@@ -97,13 +115,15 @@ export default function AdminPage({ user, onLoggedOut }) {
         >
           Families
         </button>
-        <button
-          type="button"
-          className={view === 'users' ? 'active' : ''}
-          onClick={() => setView('users')}
-        >
-          Users
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            className={view === 'users' ? 'active' : ''}
+            onClick={() => setView('users')}
+          >
+            Users
+          </button>
+        )}
         <button
           type="button"
           className={view === 'account' ? 'active' : ''}
@@ -115,7 +135,7 @@ export default function AdminPage({ user, onLoggedOut }) {
 
       {loadingFamily && <p className="family-search-status">Loading family...</p>}
 
-      {view === 'users' && <UserManagement currentUser={user} />}
+      {view === 'users' && isAdmin && <UserManagement currentUser={user} />}
 
       {view === 'account' && <ChangePasswordForm />}
 
@@ -125,19 +145,29 @@ export default function AdminPage({ user, onLoggedOut }) {
           onAddNew={openAddNew}
           onImport={openImport}
           refreshToken={refreshToken}
+          isAdmin={isAdmin}
         />
       )}
 
-      {view === 'form' && !loadingFamily && (
+      {view === 'viewFamily' && !loadingFamily && activeFamily && (
+        <FamilyView
+          family={activeFamily}
+          isAdmin={isAdmin}
+          onEdit={openEdit}
+          onBack={backToSearch}
+        />
+      )}
+
+      {view === 'form' && !loadingFamily && isAdmin && (
         <FamilyForm
           family={activeFamily}
           onSaved={backToSearch}
           onDeleted={backToSearch}
-          onCancel={backToSearch}
+          onCancel={cancelForm}
         />
       )}
 
-      {view === 'import' && (
+      {view === 'import' && isAdmin && (
         <ImportPdf
           parsedFamilies={parsedFamilies}
           totalCount={totalParsedCount}
@@ -148,7 +178,7 @@ export default function AdminPage({ user, onLoggedOut }) {
         />
       )}
 
-      {view === 'import-form' && (
+      {view === 'import-form' && isAdmin && (
         <FamilyForm
           draft={activeDraft}
           onSaved={draftSaved}

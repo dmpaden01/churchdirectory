@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 import familiesRouter from './routes/families.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
-import { requireAuth, requireRole } from './middleware/auth.js';
+import { requireAuth } from './middleware/auth.js';
 
 dotenv.config();
 
@@ -28,7 +28,9 @@ app.get('/api/test', (req, res) => {
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
-app.use('/api/families', requireAuth, requireRole('admin'), familiesRouter);
+// Read access (search/view/photos) is open to any signed-in user; write routes
+// (create/update/delete/import) enforce admin themselves within familiesRouter.
+app.use('/api/families', requireAuth, familiesRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

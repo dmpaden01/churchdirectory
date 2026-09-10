@@ -3,6 +3,7 @@ import { PDFParse } from 'pdf-parse';
 import Family from '../models/Family.js';
 import upload from '../middleware/upload.js';
 import uploadPdf from '../middleware/uploadPdf.js';
+import { requireRole } from '../middleware/auth.js';
 import {
   parseDirectoryPdf,
   flagExistingMatches,
@@ -71,7 +72,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/families/parse-pdf - extract draft families from a legacy directory PDF for review.
 // Nothing is saved here; the client reviews/completes each draft and creates it via POST /.
-router.post('/parse-pdf', uploadPdf.single('pdf'), async (req, res) => {
+router.post('/parse-pdf', requireRole('admin'), uploadPdf.single('pdf'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No PDF file was provided.' });
     const parser = new PDFParse({ data: req.file.buffer });
@@ -135,8 +136,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/families - create a new family
-router.post('/', upload.any(), async (req, res) => {
+// POST /api/families - create a new family (admin only)
+router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
   try {
     const payload = JSON.parse(req.body.data || '{}');
     const files = req.files || [];
@@ -173,8 +174,8 @@ router.post('/', upload.any(), async (req, res) => {
   }
 });
 
-// PUT /api/families/:id - update an existing family
-router.put('/:id', upload.any(), async (req, res) => {
+// PUT /api/families/:id - update an existing family (admin only)
+router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
   try {
     const existing = await Family.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Family not found' });
@@ -213,8 +214,8 @@ router.put('/:id', upload.any(), async (req, res) => {
   }
 });
 
-// DELETE /api/families/:id
-router.delete('/:id', async (req, res) => {
+// DELETE /api/families/:id (admin only)
+router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const family = await Family.findByIdAndDelete(req.params.id);
     if (!family) return res.status(404).json({ error: 'Family not found' });

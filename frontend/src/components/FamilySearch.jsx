@@ -7,7 +7,7 @@ function headOf(family) {
 }
 
 // Search-by-family-name box plus results list, and the "Add new family" entry point.
-export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refreshToken }) {
+export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refreshToken, isAdmin }) {
   const [query, setQuery] = useState('');
   const [families, setFamilies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,12 +32,16 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refre
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="button" className="primary-btn" onClick={onAddNew}>
-          + Add a New Family
-        </button>
-        <button type="button" onClick={onImport}>
-          Import from PDF
-        </button>
+        {isAdmin && (
+          <>
+            <button type="button" className="primary-btn" onClick={onAddNew}>
+              + Add a New Family
+            </button>
+            <button type="button" onClick={onImport}>
+              Import from PDF
+            </button>
+          </>
+        )}
       </div>
 
       {error && <div className="form-error">{error}</div>}
