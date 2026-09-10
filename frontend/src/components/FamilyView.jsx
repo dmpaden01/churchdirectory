@@ -1,9 +1,9 @@
 import { familyPhotoUrl } from '../api/families';
 import './FamilyView.css';
 
+// Head/spouse are easily inferred from context (first two adults listed), so
+// only children get an explicit tag in the read-only view.
 const ROLE_LABELS = {
-  head: 'Head of Household',
-  spouse: 'Spouse',
   child: 'Child',
 };
 
@@ -25,7 +25,9 @@ function MemberLine({ individual }) {
   return (
     <p className="family-member-line">
       <strong>{individual.firstName} {individual.lastName}</strong>
-      <span className="member-role-tag">{ROLE_LABELS[individual.role]}</span>
+      {ROLE_LABELS[individual.role] && (
+        <span className="member-role-tag">{ROLE_LABELS[individual.role]}</span>
+      )}
       {details.length > 0 && <span className="member-details">{details.join(' · ')}</span>}
     </p>
   );
