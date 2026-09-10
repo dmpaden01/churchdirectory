@@ -1,0 +1,129 @@
+import { useRef, useState } from 'react';
+import { parseDirectoryPdf } from '../api/families';
+import './ImportPdf.css';
+
+// Uploads a legacy "Church Directory" PDF, parses it into draft family records
+// server-side, and lets the admin work through the batch one family at a time.
+export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onReview, onSkip, onDone }) {
+  const [dragging, setDragging] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    if (file.type !== 'application/pdf') {
+      setError('Please choose a .pdf file.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const { families } = await parseDirectoryPdf(file);
+      const withKeys = families.map((f, i) => ({ ...f, _key: `${Date.now()}-${i}` }));
+      onParsed(withKeys);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const importedCount = totalCount === null ? null : totalCount - parsedFamilies.length;
+
+  return (
+    <div className="import-pdf">
+      <h2>Import Families from PDF</h2>
+      <p className="import-pdf-hint">
+        Upload a legacy directory PDF export. Each family found in the file will be parsed into a
+        draft you can review, complete (gender is not in the source and must be set manually), and save
+        individually.
+      </p>
+
+      <div
+        className={`import-dropzone${dragging ? ' dragging' : ''}`}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files?.[0]); }}
+        onClick={() => inputRef.current?.click()}
+        role="button"
+        tabIndex={0}
+      >
+        {loading ? 'Parsing PDF...' : 'Drag & drop a directory PDF here, or click to browse'}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf"
+          className="import-dropzone-input"
+          onChange={(e) => handleFile(e.target.files?.[0])}
+        />
+      </div>
+
+      {error && <div className="form-error">{error}</div>}
+
+      {parsedFamilies.length > 0 && (
+        <>
+          <p className="import-pdf-progress">
+            {importedCount} of {totalCount} handled &mdash; {parsedFamilies.length} remaining
+          </p>
+          <ul className="import-results">
+            {parsedFamilies.map((f) => {
+              const head = f.individuals[0];
+              const spouse = f.individuals.find((i) => i.role === 'spouse');
+              const childCount = f.individuals.filter((i) => i.role === 'child').length;
+              return (
+                <li key={f._key}>
+                  <div className="import-result-info">
+                    <strong>{head.lastName} Family</strong>
+                    <span>
+                      {head.firstName} {head.lastName}
+                      {spouse ? ` & ${spouse.firstName}` : ''}
+                      {childCount > 0 ? ` (+${childCount} child${childCount > 1 ? 'ren' : ''})` : ''}
+                    </span>
+                    <span className="import-result-location">
+                      {f.city}{f.city && f.state ? ', ' : ''}{f.state}
+                    </span>
+                    {f.existingMatch === 'address' && (
+                      <span className="import-result-duplicate">Already in your directory</span>
+                    )}
+                    {f.existingMatch === 'name' && (
+                      <span className="import-result-duplicate">Possible match already in your directory</span>
+                    )}
+                    {f.notes.length > 0 && (
+                      <span className="import-result-warning">{f.notes.length} item(s) to double-check</span>
+                    )}
+                  </div>
+                  <div className="import-result-actions">
+                    <button
+                      type="button"
+                      className={f.existingMatch === 'address' ? '' : 'primary-btn'}
+                      onClick={() => onReview(f._key)}
+                    >
+                      Review & Save
+                    </button>
+                    <button
+                      type="button"
+                      className={f.existingMatch === 'address' ? 'primary-btn' : ''}
+                      onClick={() => onSkip(f._key)}
+                    >
+                      Skip
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+
+      {totalCount !== null && parsedFamilies.length === 0 && (
+        <p className="family-search-status">All families from this file have been handled.</p>
+      )}
+
+      <div className="form-actions">
+        <button type="button" onClick={onDone}>Back to Search</button>
+      </div>
+    </div>
+  );
+}

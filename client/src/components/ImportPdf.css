@@ -1,0 +1,96 @@
+.import-pdf-hint {
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.import-dropzone {
+  border: 2px dashed #9ca3af;
+  border-radius: 10px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--code-bg);
+  margin-bottom: 16px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.import-dropzone:hover,
+.import-dropzone.dragging {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.import-dropzone-input {
+  display: none;
+}
+
+.import-pdf-progress {
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.import-results {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import-results li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.import-result-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.import-result-info strong {
+  color: var(--text-h);
+}
+
+.import-result-location {
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.import-result-warning {
+  font-size: 0.8rem;
+  color: #d97706;
+}
+
+.import-result-duplicate {
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.import-result-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.import-result-actions button {
+  white-space: nowrap;
+}
+
+.import-result-actions button:not(.primary-btn) {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--text-h);
+}
