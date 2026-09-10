@@ -83,12 +83,19 @@ router.post('/parse-pdf', requireRole('admin'), uploadPdf.single('pdf'), async (
 
     const photoEntries = buildPhotoMatchEntries(families).filter((e) => e.pageNum != null && e.prefix);
     if (photoEntries.length > 0) {
-      const imageMatches = await matchImagesToFamilies(req.file.buffer, photoEntries);
-      if (imageMatches.size > 0) {
-        const imageResult = await parser.getImage();
-        const imagesByName = new Map();
-        imageResult.pages.forEach((p) => p.images.forEach((img) => imagesByName.set(img.name, img)));
-        families = attachPhotos(families, imageMatches, imagesByName);
+      try {
+        const imageMatches = await matchImagesToFamilies(req.file.buffer, photoEntries);
+        if (imageMatches.size > 0) {
+          const imageResult = await parser.getImage();
+          const imagesByName = new Map();
+          imageResult.pages.forEach((p) => p.images.forEach((img) => imagesByName.set(img.name, img)));
+          families = attachPhotos(families, imageMatches, imagesByName);
+        }
+      } catch (photoErr) {
+        // Photo extraction needs PDF page rendering, which isn't available on every host
+        // (see backend/vendor/napi-rs-canvas-stub). Degrade to photo-less drafts rather
+        // than failing the whole import.
+        families.forEach((f) => f.notes.push('Photos could not be imported from the source PDF on this server.'));
       }
     }
 

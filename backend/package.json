@@ -26,5 +26,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
+  },
+  "overrides": {
+    "@napi-rs/canvas": "file:./vendor/napi-rs-canvas-stub"
   }
 }

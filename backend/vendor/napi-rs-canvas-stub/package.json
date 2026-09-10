@@ -1,0 +1,6 @@
+{
+  "name": "@napi-rs/canvas",
+  "version": "0.0.0-stub",
+  "description": "No-op stand-in for @napi-rs/canvas, used on hosts whose CPU lacks the instructions (e.g. AVX) the real native addon requires. Loading the real addon on such hardware crashes the whole Node process with SIGILL before pdfjs-dist's try/catch around require() can even run, so it has to be swapped out at install time via an npm override rather than caught at runtime.",
+  "main": "index.js"
+}
