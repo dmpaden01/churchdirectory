@@ -10,11 +10,14 @@ const photoSchema = new Schema(
   { _id: false },
 );
 
-// Single document holding site-wide settings (favicon, and whatever else gets
-// added later). Always read/written via the fixed "singleton" _id below.
+// Single document holding site-wide settings, always read/written via the
+// fixed "singleton" _id below.
+// - logo: the original full-size image an admin uploads.
+// - favicon: a 50x50 version auto-generated from it for the browser tab icon.
 const settingSchema = new Schema(
   {
     _id: { type: String },
+    logo: { type: photoSchema },
     favicon: { type: photoSchema },
   },
   { timestamps: true },

@@ -10,7 +10,7 @@ A full-stack church directory admin tool: manage families and individuals, uploa
 
 ## Branding
 
-`frontend/public/favicon.svg` is a generic placeholder (a cross) so the repo works out of the box for anyone. For your own deployment, replace it with your organization's actual icon - just overwrite that file (any square SVG or PNG works; if you switch to PNG, update the `<link rel="icon">` in `frontend/index.html` to match).
+`frontend/public/favicon.svg` is a static generic placeholder (a cross) used until an admin sets a real one. Once signed in as an admin, the **Settings** page lets you drag and drop your organization's logo - it's stored in MongoDB, and a 50x50 favicon is auto-generated from it (scaled to fit without stretching) and used as the browser tab icon everywhere, including the sign-in page. No file changes needed for this; it's fully dynamic.
 
 ## Getting started
 

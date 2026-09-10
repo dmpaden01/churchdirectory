@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import PhotoDropzone from './components/PhotoDropzone';
-import { faviconUrl, hasCustomFavicon, uploadFavicon, resetFavicon } from './api/settings';
+import { logoUrl, hasCustomLogo, uploadLogo, resetLogo } from './api/settings';
 import { applyDynamicFavicon } from './utils/applyFavicon';
 import './SettingsPage.css';
 
-// Admin-only: site-wide settings. Currently just the favicon, stored in
-// MongoDB (like family/individual photos) and served via /api/settings/favicon.
+// Admin-only: site-wide settings. Currently just the site logo, stored in
+// MongoDB (like family/individual photos). Uploading it also auto-generates
+// and stores a 50x50 favicon derived from it, served via /api/settings/favicon.
 export default function SettingsPage() {
   const [hasCustom, setHasCustom] = useState(null); // null = still checking
   const [error, setError] = useState(null);
@@ -14,14 +15,14 @@ export default function SettingsPage() {
   const [cacheBust, setCacheBust] = useState(0);
 
   useEffect(() => {
-    hasCustomFavicon().then(setHasCustom);
+    hasCustomLogo().then(setHasCustom);
   }, []);
 
   const handleChange = async (file) => {
     setSaving(true);
     setError(null);
     try {
-      await uploadFavicon(file);
+      await uploadLogo(file);
       await applyDynamicFavicon();
       setHasCustom(true);
       setCacheBust((b) => b + 1);
@@ -37,7 +38,7 @@ export default function SettingsPage() {
     setSaving(true);
     setError(null);
     try {
-      await resetFavicon();
+      await resetLogo();
       await applyDynamicFavicon();
       setHasCustom(false);
     } catch (err) {
@@ -52,17 +53,18 @@ export default function SettingsPage() {
     <div className="settings-page">
       <h2>Settings</h2>
       <section className="form-section">
-        <h3>Site Favicon</h3>
+        <h3>Site Logo</h3>
         <p className="settings-hint">
-          Shown in the browser tab for everyone, including on the sign-in page. Drag and drop a
-          .jpg or .png to replace it, or remove it to use the default.
+          Drag and drop a .jpg or .png to replace it, or remove it to use the default. A 50x50
+          favicon is generated from it automatically (scaled to fit without stretching) and used
+          for the browser tab icon everywhere, including on the sign-in page.
         </p>
         {error && <div className="form-error">{error}</div>}
         {hasCustom !== null && (
           <PhotoDropzone
             key={resetKey}
-            label="Favicon"
-            existingUrl={hasCustom ? `${faviconUrl()}?v=${cacheBust}` : null}
+            label="Logo"
+            existingUrl={hasCustom ? `${logoUrl()}?v=${cacheBust}` : null}
             onChange={handleChange}
             onRemove={handleRemove}
           />
