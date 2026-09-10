@@ -5,6 +5,7 @@ import FamilyForm from './components/FamilyForm';
 import ImportPdf from './components/ImportPdf';
 import UserManagement from './components/UserManagement';
 import ChangePasswordForm from './components/ChangePasswordForm';
+import SiteLogo from './components/SiteLogo';
 import SettingsPage from './SettingsPage';
 import { getFamily } from './api/families';
 import { logout } from './api/auth';
@@ -101,7 +102,7 @@ export default function DirectoryPage({ user, onLoggedOut }) {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <h1>Church Directory</h1>
+        <h1><SiteLogo className="site-logo" />Church Directory</h1>
         <div className="admin-header-right">
           <span className="admin-current-user">Signed in as {user.username}</span>
           <button type="button" onClick={handleLogout}>Sign Out</button>
