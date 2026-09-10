@@ -95,6 +95,25 @@ router.post('/:id/deny', async (req, res) => {
   }
 });
 
+// PUT /api/users/:id/role - change a user's role between admin and user (admin only)
+router.put('/:id/role', async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['admin', 'user'].includes(role)) {
+      return res.status(400).json({ error: 'Role must be either "admin" or "user".' });
+    }
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot change your own role while signed in as it.' });
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true, select: USER_FIELDS });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // PUT /api/users/:id/password - reset another user's password (admin only, no current password needed)
 router.put('/:id/password', async (req, res) => {
   try {

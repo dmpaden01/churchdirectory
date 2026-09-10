@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listUsers, createUser, deleteUser, approveUser, denyUser } from '../api/users';
+import { listUsers, createUser, deleteUser, approveUser, denyUser, updateUserRole } from '../api/users';
 import ResetPasswordForm from './ResetPasswordForm';
 import './UserManagement.css';
 
@@ -23,6 +23,8 @@ export default function UserManagement({ currentUser }) {
   const [resetMessage, setResetMessage] = useState(null);
   const [decidingId, setDecidingId] = useState(null);
   const [decisionError, setDecisionError] = useState(null);
+  const [roleUpdatingId, setRoleUpdatingId] = useState(null);
+  const [roleError, setRoleError] = useState(null);
 
   const loadUsers = () => {
     setLoading(true);
@@ -86,6 +88,20 @@ export default function UserManagement({ currentUser }) {
       setDecisionError(err.message);
     } finally {
       setDecidingId(null);
+    }
+  };
+
+  const handleRoleToggle = async (user) => {
+    const newRole = user.role === 'admin' ? 'user' : 'admin';
+    setRoleUpdatingId(user._id);
+    setRoleError(null);
+    try {
+      await updateUserRole(user._id, newRole);
+      loadUsers();
+    } catch (err) {
+      setRoleError(err.message);
+    } finally {
+      setRoleUpdatingId(null);
     }
   };
 
@@ -175,6 +191,8 @@ export default function UserManagement({ currentUser }) {
         </div>
       )}
 
+      {!loading && roleError && <div className="form-error">{roleError}</div>}
+
       {!loading && (
         <ul className="user-list">
           {others.map((user) => (
@@ -185,7 +203,25 @@ export default function UserManagement({ currentUser }) {
                   {(user.firstName || user.lastName) && (
                     <span className="pending-email">{user.username}</span>
                   )}
-                  <span className={`role-badge role-${user.role}`}>{user.role}</span>
+                  <label
+                    className="role-toggle"
+                    title={
+                      user.username === currentUser.username
+                        ? 'You cannot change your own role'
+                        : `Switch to ${user.role === 'admin' ? 'User' : 'Admin'}`
+                    }
+                  >
+                    <input
+                      type="checkbox"
+                      checked={user.role === 'admin'}
+                      disabled={user.username === currentUser.username || roleUpdatingId === user._id}
+                      onChange={() => handleRoleToggle(user)}
+                    />
+                    <span className="role-toggle-track">
+                      <span className="role-toggle-thumb" />
+                    </span>
+                    <span className="role-toggle-text">{user.role === 'admin' ? 'Admin' : 'User'}</span>
+                  </label>
                   {STATUS_LABELS[user.status] && (
                     <span className="status-badge">{STATUS_LABELS[user.status]}</span>
                   )}

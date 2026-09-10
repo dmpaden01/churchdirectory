@@ -49,6 +49,19 @@ export async function denyUser(id) {
   return res.json();
 }
 
+export async function updateUserRole(id, role) {
+  const res = await fetch(`${BASE_URL}/${id}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to change role');
+  }
+  return res.json();
+}
+
 export async function deleteUser(id) {
   const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
   if (!res.ok && res.status !== 204) {
