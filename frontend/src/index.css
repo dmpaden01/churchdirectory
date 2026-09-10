@@ -91,6 +91,15 @@ h2 {
     font-size: 20px;
   }
 }
+
+/* Sized in em so it inherits whichever h1's font-size it's placed in and
+   scales with it at every breakpoint - 1.5x the title text's height. */
+.site-logo {
+  height: 1.5em;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 0.35em;
+}
 p {
   margin: 0;
 }

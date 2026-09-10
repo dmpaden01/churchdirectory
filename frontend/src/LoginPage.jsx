@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { login } from './api/auth';
 import RegisterForm from './components/RegisterForm';
+import SiteLogo from './components/SiteLogo';
 import './LoginPage.css';
 
 export default function LoginPage({ onLoggedIn }) {
@@ -35,7 +36,7 @@ export default function LoginPage({ onLoggedIn }) {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
-        <h1>Church Directory</h1>
+        <h1><SiteLogo className="site-logo" />Church Directory</h1>
         <p className="login-subtitle">Sign in to continue</p>
 
         {error && <div className="form-error">{error}</div>}
