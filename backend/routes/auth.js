@@ -218,7 +218,11 @@ router.get('/verify-email', async (req, res) => {
 
     // Best-effort: a failed admin notification shouldn't block the user from
     // seeing their verification succeeded, nor stop other admins being notified.
-    const admins = await User.find({ role: 'admin', receiveAdminNotifications: true });
+    // receiveAdminNotifications defaults to true for new admins, but Mongoose
+    // defaults don't retroactively backfill existing documents - so treat a
+    // missing field the same as true (only an explicit opt-out excludes them),
+    // matching the "opt-out" semantics the settings UI already assumes.
+    const admins = await User.find({ role: 'admin', receiveAdminNotifications: { $ne: false } });
     const adminEmails = admins.map((admin) => admin.username).filter((username) => EMAIL_RE.test(username));
     await Promise.all(
       adminEmails.map((adminEmail) =>
