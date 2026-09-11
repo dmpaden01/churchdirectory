@@ -102,7 +102,7 @@
    saved, so a reviewer can spot exactly what changed without comparing every
    field by hand. */
 .field-group.field-changed label {
-  color: #2f7dd1;
+  color: #d97706;
 }
 
 .field-group.field-changed label::after {
@@ -112,16 +112,16 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  color: #2f7dd1;
-  background: rgba(47, 125, 209, 0.12);
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.12);
   padding: 1px 6px;
   border-radius: 999px;
 }
 
 .field-group.field-changed input,
 .field-group.field-changed select {
-  border-color: #2f7dd1;
-  background: rgba(47, 125, 209, 0.07);
+  border-color: #d97706;
+  background: rgba(217, 119, 6, 0.07);
 }
 
 .individual-fieldset {
@@ -133,8 +133,8 @@
 }
 
 .individual-fieldset.has-changes {
-  border-color: #2f7dd1;
-  background: rgba(47, 125, 209, 0.04);
+  border-color: #d97706;
+  background: rgba(217, 119, 6, 0.04);
 }
 
 .individual-fieldset legend {
