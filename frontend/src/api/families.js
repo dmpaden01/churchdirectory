@@ -23,6 +23,18 @@ export async function getFamily(id) {
   return res.json();
 }
 
+// Dismisses needsReview and any import-review notes/highlights without
+// editing the family - lets an admin confirm a flagged family looks fine
+// as-is straight from the read-only view.
+export async function completeReview(id) {
+  const res = await fetch(`${BASE_URL}/${id}/complete-review`, { method: 'PATCH' });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to complete review');
+  }
+  return res.json();
+}
+
 // Builds a multipart/form-data request from the family form state.
 // formState: family fields + `photoFile` (File|undefined) + `removeFamilyPhoto` (bool)
 //   + individuals: [{ ...fields, _photoFile: File|undefined, removePhoto: bool }]

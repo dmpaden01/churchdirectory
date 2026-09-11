@@ -86,7 +86,7 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onRev
                   className="family-result-review-btn"
                   onClick={(e) => { e.stopPropagation(); onReviewFamily(family._id); }}
                 >
-                  Needs Review
+                  Review{family.reviewNotes?.length > 0 ? ` (${family.reviewNotes.length})` : ''}
                 </button>
               )}
             </li>

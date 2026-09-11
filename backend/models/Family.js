@@ -42,6 +42,14 @@ const familySchema = new Schema(
     // Set when a family is bulk-accepted from a PDF import without individual
     // review, so an admin can find and double-check it later.
     needsReview: { type: Boolean, default: false },
+    // The parser's "please double-check" notes and the field-level diff
+    // against the previously-saved record (see computeChangedFields on the
+    // frontend), persisted only when a family is bulk-accepted so a later
+    // reviewer sees the same guidance an interactive review would have shown.
+    // Cleared automatically the next time this family is saved through the
+    // normal edit form - see PUT /:id below.
+    reviewNotes: { type: [String], default: undefined },
+    reviewChangedFields: { type: Schema.Types.Mixed, default: undefined },
     individuals: {
       type: [individualSchema],
       validate: {

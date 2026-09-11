@@ -74,10 +74,15 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Snapshot of which fields the PDF draft would change vs. what's already
-  // saved, for highlighting - computed once from the original props, not from
-  // the live (editable) form state, so it doesn't disappear as the admin types.
-  const [changedFields] = useState(() => computeChangedFields(family, draft));
+  // Snapshot of which fields differ from what's already saved, for
+  // highlighting - computed once from the original props, not from the live
+  // (editable) form state, so it doesn't disappear as the admin types. A live
+  // PDF-import draft takes priority; otherwise fall back to whatever was
+  // persisted from an earlier bulk import (see reviewChangedFields).
+  const [changedFields] = useState(() => (
+    draft ? computeChangedFields(family, draft) : (family?.reviewChangedFields || null)
+  ));
+  const reviewNotes = draft?.notes?.length > 0 ? draft.notes : (family?.reviewNotes || []);
 
   const isEditing = Boolean(family);
   const hasSpouse = form.individuals.some((ind) => ind.role === 'spouse');
@@ -158,7 +163,7 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
           checked={form.needsReview}
           onChange={(e) => setForm((prev) => ({ ...prev, needsReview: e.target.checked }))}
         />
-        Needs review
+        Review
         <span className="needs-review-hint">
           {form.needsReview
             ? 'Flagged for a follow-up check - uncheck once you’ve verified this family’s information.'
@@ -166,11 +171,11 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
         </span>
       </label>
 
-      {draft?.notes?.length > 0 && (
+      {reviewNotes.length > 0 && (
         <div className="import-notes">
           <strong>Please double-check the following before saving:</strong>
           <ul>
-            {draft.notes.map((note, i) => <li key={i}>{note}</li>)}
+            {reviewNotes.map((note, i) => <li key={i}>{note}</li>)}
           </ul>
         </div>
       )}

@@ -1,4 +1,5 @@
-import { familyPhotoUrl } from '../api/families';
+import { useState } from 'react';
+import { familyPhotoUrl, completeReview } from '../api/families';
 import './FamilyView.css';
 
 // Head/spouse are easily inferred from context (first two adults listed), so
@@ -7,31 +8,52 @@ const ROLE_LABELS = {
   child: 'Child',
 };
 
-// One person, condensed onto a single line: name, role tag, then whatever
-// details are actually present, separated by dots.
-function MemberLine({ individual }) {
+function changedCls(isChanged) {
+  return isChanged ? 'review-changed-text' : undefined;
+}
+
+// One person: name, role tag, then whatever details are actually present -
+// dot-separated inline on wider screens, one per line on narrow ones (see
+// .member-details in FamilyView.css). `changedFields` (optional) highlights
+// exactly which of this person's fields an import review flagged.
+function MemberLine({ individual, changedFields }) {
   const details = [
-    individual.roleStatus,
-    individual.cellPhone,
-    individual.email,
-    individual.birthday,
-  ].filter(Boolean);
+    { key: 'roleStatus', value: individual.roleStatus },
+    { key: 'cellPhone', value: individual.cellPhone },
+    { key: 'email', value: individual.email },
+    { key: 'birthday', value: individual.birthday },
+  ].filter((d) => d.value);
 
   return (
     <p className="family-member-line">
-      <strong>{individual.firstName} {individual.lastName}</strong>
+      <strong className={changedCls(changedFields?.firstName || changedFields?.lastName)}>
+        {individual.firstName} {individual.lastName}
+      </strong>
       {ROLE_LABELS[individual.role] && (
         <span className="member-role-tag">{ROLE_LABELS[individual.role]}</span>
       )}
-      {details.length > 0 && <span className="member-details">{details.join(' · ')}</span>}
+      {details.length > 0 && (
+        <span className="member-details">
+          {details.map((d) => (
+            <span key={d.key} className={['member-detail', changedCls(changedFields?.[d.key])].filter(Boolean).join(' ')}>
+              {d.value}
+            </span>
+          ))}
+        </span>
+      )}
     </p>
   );
 }
 
 // Read-only display of a family, visible to any signed-in user. Laid out as a
 // single compact card: photo on the left, member lines and mailing-style
-// address on the right.
-export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
+// address on the right. `onReviewCompleted` (admin only): called with the
+// updated family after dismissing a pending review, so the parent can update
+// its copy without navigating away from this page.
+export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCompleted }) {
+  const [completing, setCompleting] = useState(false);
+  const [completeError, setCompleteError] = useState(null);
+
   const streetLine = [family.address, family.aptSuite].filter(Boolean).join(', ');
   const cityStateZip = [
     [family.city, family.state].filter(Boolean).join(', '),
@@ -41,12 +63,28 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
   const mapsUrl = fullAddress
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`
     : null;
+  // Import-review highlighting is an admin workflow aid - a non-admin viewer
+  // would see oddly-colored text with no banner/button to explain it.
+  const changed = isAdmin ? family.reviewChangedFields : null;
 
   // Belt-and-suspenders: href + target="_blank" alone is sometimes overridden by
   // browser settings/extensions, so force a genuine new-tab/window open on click too.
   const openMaps = (e) => {
     e.preventDefault();
     window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCompleteReview = async () => {
+    setCompleting(true);
+    setCompleteError(null);
+    try {
+      const updated = await completeReview(family._id);
+      onReviewCompleted(updated);
+    } catch (err) {
+      setCompleteError(err.message);
+    } finally {
+      setCompleting(false);
+    }
   };
 
   return (
@@ -60,17 +98,39 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
         )}
       </div>
 
+      {isAdmin && family.needsReview && (
+        <div className="needs-review-banner">
+          <span>
+            Review
+            {family.reviewNotes?.length > 0
+              ? ` (${family.reviewNotes.length} item${family.reviewNotes.length === 1 ? '' : 's'} to double-check)`
+              : ''}
+          </span>
+          <button type="button" onClick={handleCompleteReview} disabled={completing}>
+            {completing ? 'Completing...' : 'Accept As-Is'}
+          </button>
+          <p className="needs-review-hint-text">
+            Click &quot;Edit Family&quot; to fix manually or &quot;Accept As-Is&quot; to complete review.
+          </p>
+        </div>
+      )}
+      {completeError && <div className="form-error">{completeError}</div>}
+
       <div className="family-card">
         <img
           src={familyPhotoUrl(family) || '/default-avatar.svg'}
           alt=""
-          className="family-card-photo"
+          className={`family-card-photo${changed?.photo ? ' photo-changed' : ''}`}
         />
 
         <div className="family-card-body">
           <div className="family-card-members">
             {family.individuals.map((individual, index) => (
-              <MemberLine individual={individual} key={individual._id || index} />
+              <MemberLine
+                individual={individual}
+                key={individual._id || index}
+                changedFields={changed?.individuals?.[index]}
+              />
             ))}
           </div>
 
@@ -83,18 +143,26 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
                 onClick={openMaps}
                 className="family-card-address-link"
               >
-                {streetLine && <div>{streetLine}</div>}
-                {cityStateZip && <div>{cityStateZip}</div>}
+                {streetLine && <div className={changedCls(changed?.address || changed?.aptSuite)}>{streetLine}</div>}
+                {cityStateZip && (
+                  <div className={changedCls(changed?.city || changed?.state || changed?.zipCode)}>{cityStateZip}</div>
+                )}
               </a>
             ) : (
               <>
-                {streetLine && <div>{streetLine}</div>}
-                {cityStateZip && <div>{cityStateZip}</div>}
+                {streetLine && <div className={changedCls(changed?.address || changed?.aptSuite)}>{streetLine}</div>}
+                {cityStateZip && (
+                  <div className={changedCls(changed?.city || changed?.state || changed?.zipCode)}>{cityStateZip}</div>
+                )}
               </>
             )}
-            {family.homePhone && <div className="family-card-extra">{family.homePhone}</div>}
+            {family.homePhone && (
+              <div className={`family-card-extra ${changedCls(changed?.homePhone) || ''}`}>{family.homePhone}</div>
+            )}
             {family.anniversary && (
-              <div className="family-card-extra">Anniversary: {family.anniversary}</div>
+              <div className={`family-card-extra ${changedCls(changed?.anniversary) || ''}`}>
+                Anniversary: {family.anniversary}
+              </div>
             )}
           </address>
         </div>

@@ -56,6 +56,22 @@ function buildIndividuals(rawIndividuals, existingIndividuals, files) {
   });
 }
 
+// Pulls the import-review notes/highlights out of a save payload, if the
+// client supplied them (only the bulk "Accept All Changes" import path does).
+// A normal save - whether a brand-new family, a manual edit, or one-at-a-time
+// import review - never includes these, so saving through the regular form
+// always clears whatever was persisted from an earlier bulk import.
+function reviewFieldsFromPayload(payload) {
+  return {
+    reviewNotes: Array.isArray(payload.reviewNotes) && payload.reviewNotes.length > 0
+      ? payload.reviewNotes
+      : undefined,
+    reviewChangedFields: payload.reviewChangedFields && typeof payload.reviewChangedFields === 'object'
+      ? payload.reviewChangedFields
+      : undefined,
+  };
+}
+
 // GET /api/families?search=lastName - list families, optionally filtered by family name
 router.get('/', async (req, res) => {
   try {
@@ -165,6 +181,24 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// PATCH /api/families/:id/complete-review - dismisses needsReview and any
+// import-review notes/highlights without touching the family's actual data
+// (admin only). Lets a reviewer confirm a flagged family looks fine as-is
+// from the read-only view, without a full edit-and-save round trip.
+router.patch('/:id/complete-review', requireRole('admin'), async (req, res) => {
+  try {
+    const family = await Family.findByIdAndUpdate(
+      req.params.id,
+      { $set: { needsReview: false }, $unset: { reviewNotes: '', reviewChangedFields: '' } },
+      { new: true },
+    ).select(EXCLUDE_PHOTO_DATA);
+    if (!family) return res.status(404).json({ error: 'Family not found' });
+    res.json(family);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // POST /api/families - create a new family (admin only)
 router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
   try {
@@ -192,6 +226,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
       homePhone: payload.homePhone || undefined,
       anniversary: normalizeAnniversary(payload.anniversary),
       needsReview: Boolean(payload.needsReview),
+      ...reviewFieldsFromPayload(payload),
       photo,
       individuals,
     });
@@ -234,6 +269,9 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
     existing.homePhone = payload.homePhone || undefined;
     existing.anniversary = normalizeAnniversary(payload.anniversary);
     existing.needsReview = Boolean(payload.needsReview);
+    const { reviewNotes, reviewChangedFields } = reviewFieldsFromPayload(payload);
+    existing.reviewNotes = reviewNotes;
+    existing.reviewChangedFields = reviewChangedFields;
     existing.photo = photo;
     existing.individuals = individuals;
 

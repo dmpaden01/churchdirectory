@@ -15,6 +15,45 @@
   color: var(--text-h);
 }
 
+.needs-review-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: rgba(217, 119, 6, 0.1);
+  border-radius: 8px;
+  font-weight: 600;
+  color: #d97706;
+}
+
+.needs-review-banner button {
+  flex-shrink: 0;
+  border: 1px solid rgba(217, 119, 6, 0.5);
+  background: var(--bg);
+  color: #d97706;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.needs-review-banner button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.needs-review-hint-text {
+  flex-basis: 100%;
+  margin: 0;
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
 .family-card {
   display: flex;
   gap: 20px;
@@ -30,6 +69,12 @@
   object-fit: cover;
   background: var(--code-bg);
   flex-shrink: 0;
+  box-sizing: border-box;
+  border: 3px solid transparent;
+}
+
+.family-card-photo.photo-changed {
+  border-color: #d97706;
 }
 
 .family-card-body {
@@ -71,6 +116,10 @@
   color: var(--text);
 }
 
+.member-detail:not(:first-child)::before {
+  content: ' · ';
+}
+
 .family-card-address {
   font-style: normal;
   color: var(--text-h);
@@ -94,4 +143,57 @@
 .family-card-extra {
   color: var(--text);
   font-size: 0.85rem;
+}
+
+/* Narrow screens: the side-by-side photo + info layout gets cramped, so stack
+   the photo on top and center everything below it instead. */
+@media (max-width: 640px) {
+  .needs-review-banner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .family-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .family-card-body {
+    align-items: center;
+    width: 100%;
+  }
+
+  .family-card-members {
+    align-items: center;
+  }
+
+  .family-member-line {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  /* One field per line instead of dot-separated - a long email otherwise
+     wraps awkwardly, sometimes leaving a stray " · " dangling on its own line. */
+  .member-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .member-detail:not(:first-child)::before {
+    content: none;
+  }
+}
+
+/* Highlights read-only text a bulk PDF import flagged as different from what
+   was previously saved, mirroring the edit form's "Changed" field styling.
+   Declared last so it wins over the plain-color rules above whenever it's
+   combined with one of them on the same element (e.g. .family-card-extra). */
+.review-changed-text {
+  color: #d97706;
+  font-weight: 700;
 }

@@ -10,7 +10,7 @@ import SiteLogo from './components/SiteLogo';
 import SettingsPage from './SettingsPage';
 import { getFamily, createFamily, updateFamily } from './api/families';
 import { logout } from './api/auth';
-import { draftToFormState } from './utils/draftFamily';
+import { draftToFormState, computeChangedFields } from './utils/draftFamily';
 import './DirectoryPage.css';
 
 const FAMILY_VIEWS = ['search', 'viewFamily', 'form', 'import', 'import-form'];
@@ -57,21 +57,12 @@ export default function DirectoryPage({ user, onLoggedOut }) {
     setView('form');
   };
 
-  // "Needs Review" button in the search list - jumps straight into the edit
-  // form instead of the read-only view, since the whole point is a fast path
-  // to fixing/clearing a flagged family.
-  const openReview = async (id) => {
-    if (!isAdmin) return;
-    setLoadingFamily(true);
-    try {
-      const family = await getFamily(id);
-      setActiveFamily(family);
-      setView('form');
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoadingFamily(false);
-    }
+  // After dismissing a pending review (or, in principle, any other in-place
+  // update) from the read-only view, update the copy held here without
+  // re-fetching or navigating away from it.
+  const familyUpdatedInPlace = (updatedFamily) => {
+    setActiveFamily(updatedFamily);
+    setRefreshToken((t) => t + 1);
   };
 
   const backToSearch = () => {
@@ -137,15 +128,36 @@ export default function DirectoryPage({ user, onLoggedOut }) {
   // Saves every remaining parsed family as-is, without individual review,
   // each flagged needsReview so it can be found and double-checked later.
   // Matched-by-address drafts update that family (same as manual review);
-  // everything else creates a new one. Removes each family from the pending
-  // list as it succeeds so the progress count updates live; anything that
-  // fails to save stays in the list for a retry.
+  // everything else creates a new one. The parser's notes and (for matched
+  // families) the field-level diff against what was already saved are
+  // persisted too, so a later reviewer opening this family sees the same
+  // "please double-check" guidance and highlighted fields an interactive
+  // review would have shown - normally saving a family clears both, but this
+  // is the one path that deliberately skips that human review step. Removes
+  // each family from the pending list as it succeeds so the progress count
+  // updates live; anything that fails to save stays in the list for a retry.
   const acceptAllDrafts = async () => {
     setBulkAccepting(true);
     const failures = [];
     for (const draft of parsedFamilies) {
       try {
-        const formState = draftToFormState(draft, { needsReview: true });
+        let reviewChangedFields;
+        if (draft.existingFamilyId) {
+          const existingFamily = await getFamily(draft.existingFamilyId);
+          reviewChangedFields = computeChangedFields(existingFamily, draft);
+        }
+        // Position-based photo matching from the PDF is inherently uncertain,
+        // so flag the photo for a visual check whenever the draft brought one
+        // - regardless of match status, since there's no "before" to diff a
+        // brand-new family's photo against.
+        if (draft.photoDataUrl) {
+          reviewChangedFields = { ...(reviewChangedFields || {}), photo: true };
+        }
+        const formState = {
+          ...draftToFormState(draft, { needsReview: true }),
+          reviewNotes: draft.notes,
+          reviewChangedFields,
+        };
         if (draft.existingFamilyId) {
           await updateFamily(draft.existingFamilyId, formState);
         } else {
@@ -237,7 +249,7 @@ export default function DirectoryPage({ user, onLoggedOut }) {
           onSelectFamily={openFamily}
           onAddNew={openAddNew}
           onImport={openImport}
-          onReviewFamily={openReview}
+          onReviewFamily={openFamily}
           refreshToken={refreshToken}
           isAdmin={isAdmin}
         />
@@ -249,6 +261,7 @@ export default function DirectoryPage({ user, onLoggedOut }) {
           isAdmin={isAdmin}
           onEdit={openEdit}
           onBack={backToSearch}
+          onReviewCompleted={familyUpdatedInPlace}
         />
       )}
 
