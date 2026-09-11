@@ -2,23 +2,8 @@ import { useState } from 'react';
 import IndividualFields from './IndividualFields';
 import PhotoDropzone from './PhotoDropzone';
 import { createFamily, updateFamily, deleteFamily, familyPhotoUrl, individualPhotoUrl } from '../api/families';
+import { draftToFormState, computeChangedFields } from '../utils/draftFamily';
 import './FamilyForm.css';
-
-function toDateInputValue(value) {
-  if (!value) return '';
-  return new Date(value).toISOString().slice(0, 10);
-}
-
-// Decodes a data: URL (e.g. a photo pulled from an imported PDF) into a real File,
-// so it uploads through the normal photo field even if the admin never touches it.
-function dataUrlToFile(dataUrl, filename) {
-  const [header, base64] = dataUrl.split(',');
-  const mime = header.match(/data:(.*?);base64/)?.[1] || 'image/png';
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return new File([bytes], filename, { type: mime });
-}
 
 function emptyIndividual(role) {
   return {
@@ -32,18 +17,6 @@ function emptyIndividual(role) {
   };
 }
 
-function draftIndividualToFormState(ind) {
-  return {
-    role: ind.role,
-    firstName: ind.firstName || '',
-    lastName: ind.lastName || '',
-    roleStatus: ind.roleStatus || '',
-    cellPhone: ind.cellPhone || '',
-    email: ind.email || '',
-    birthday: toDateInputValue(ind.birthday),
-  };
-}
-
 function familyToFormState(family, draft) {
   if (family) {
     // Editing an existing family. If a PDF-import draft is also given, the import
@@ -51,49 +24,34 @@ function familyToFormState(family, draft) {
     // (not what's currently saved) so Review & Save updates this record instead
     // of creating a duplicate. The individuals list is fully replaced by the
     // draft's in that case, so existing per-person photos aren't carried over
-    // (there's no reliable way to match old people to new ones).
-    const source = draft || family;
+    // (there's no reliable way to match old people to new ones). Reviewing here
+    // (either way) resolves any pending needs-review flag.
+    if (draft) return draftToFormState(draft, { needsReview: false });
     return {
-      address: source.address || '',
-      aptSuite: source.aptSuite || '',
-      city: source.city || '',
-      state: source.state || '',
-      zipCode: source.zipCode || '',
-      homePhone: source.homePhone || '',
-      anniversary: source.anniversary || '',
-      photoPath: draft?.photoDataUrl || familyPhotoUrl(family),
-      photoFile: draft?.photoDataUrl ? dataUrlToFile(draft.photoDataUrl, 'imported-family-photo.png') : undefined,
+      address: family.address || '',
+      aptSuite: family.aptSuite || '',
+      city: family.city || '',
+      state: family.state || '',
+      zipCode: family.zipCode || '',
+      homePhone: family.homePhone || '',
+      anniversary: family.anniversary || '',
+      photoPath: familyPhotoUrl(family),
       removeFamilyPhoto: false,
-      individuals: draft
-        ? draft.individuals.map(draftIndividualToFormState)
-        : family.individuals.map((ind, index) => ({
-            role: ind.role,
-            firstName: ind.firstName || '',
-            lastName: ind.lastName || '',
-            roleStatus: ind.roleStatus || '',
-            cellPhone: ind.cellPhone || '',
-            email: ind.email || '',
-            birthday: toDateInputValue(ind.birthday),
-            photoPath: individualPhotoUrl(family._id, index, ind),
-            removePhoto: false,
-          })),
+      needsReview: family.needsReview || false,
+      individuals: family.individuals.map((ind, index) => ({
+        role: ind.role,
+        firstName: ind.firstName || '',
+        lastName: ind.lastName || '',
+        roleStatus: ind.roleStatus || '',
+        cellPhone: ind.cellPhone || '',
+        email: ind.email || '',
+        birthday: ind.birthday || '',
+        photoPath: individualPhotoUrl(family._id, index, ind),
+        removePhoto: false,
+      })),
     };
   }
-  if (draft) {
-    return {
-      address: draft.address || '',
-      aptSuite: draft.aptSuite || '',
-      city: draft.city || '',
-      state: draft.state || '',
-      zipCode: draft.zipCode || '',
-      homePhone: draft.homePhone || '',
-      anniversary: draft.anniversary || '',
-      photoPath: draft.photoDataUrl || undefined,
-      photoFile: draft.photoDataUrl ? dataUrlToFile(draft.photoDataUrl, 'imported-family-photo.png') : undefined,
-      removeFamilyPhoto: false,
-      individuals: draft.individuals.map(draftIndividualToFormState),
-    };
-  }
+  if (draft) return draftToFormState(draft, { needsReview: false });
   return {
     address: '',
     aptSuite: '',
@@ -104,6 +62,7 @@ function familyToFormState(family, draft) {
     anniversary: '',
     photoPath: undefined,
     removeFamilyPhoto: false,
+    needsReview: false,
     individuals: [emptyIndividual('head')],
   };
 }
@@ -115,8 +74,15 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  // Snapshot of which fields the PDF draft would change vs. what's already
+  // saved, for highlighting - computed once from the original props, not from
+  // the live (editable) form state, so it doesn't disappear as the admin types.
+  const [changedFields] = useState(() => computeChangedFields(family, draft));
+
   const isEditing = Boolean(family);
   const hasSpouse = form.individuals.some((ind) => ind.role === 'spouse');
+
+  const fieldGroupClass = (name) => `field-group${changedFields?.[name] ? ' field-changed' : ''}`;
 
   const setField = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
@@ -186,6 +152,20 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
 
       {error && <div className="form-error">{error}</div>}
 
+      <label className={`needs-review-toggle${form.needsReview ? ' active' : ''}`}>
+        <input
+          type="checkbox"
+          checked={form.needsReview}
+          onChange={(e) => setForm((prev) => ({ ...prev, needsReview: e.target.checked }))}
+        />
+        Needs review
+        <span className="needs-review-hint">
+          {form.needsReview
+            ? 'Flagged for a follow-up check - uncheck once you’ve verified this family’s information.'
+            : 'Flag this family for another admin to double-check later.'}
+        </span>
+      </label>
+
       {draft?.notes?.length > 0 && (
         <div className="import-notes">
           <strong>Please double-check the following before saving:</strong>
@@ -206,43 +186,43 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
           />
 
           <div className="family-fields-grid">
-            <div className="field-group">
-              <label>Address *</label>
-              <input type="text" value={form.address} onChange={setField('address')} required />
+            <div className={fieldGroupClass('address')}>
+              <label>Address</label>
+              <input type="text" value={form.address} onChange={setField('address')} />
             </div>
 
-            <div className="field-group">
+            <div className={fieldGroupClass('aptSuite')}>
               <label>Suite / Apt. Number</label>
               <input type="text" value={form.aptSuite} onChange={setField('aptSuite')} />
             </div>
 
-            <div className="field-group">
-              <label>City *</label>
-              <input type="text" value={form.city} onChange={setField('city')} required />
+            <div className={fieldGroupClass('city')}>
+              <label>City</label>
+              <input type="text" value={form.city} onChange={setField('city')} />
             </div>
 
-            <div className="field-group">
-              <label>State *</label>
-              <input type="text" value={form.state} onChange={setField('state')} required />
+            <div className={fieldGroupClass('state')}>
+              <label>State</label>
+              <input type="text" value={form.state} onChange={setField('state')} />
             </div>
 
-            <div className="field-group">
-              <label>Zip Code *</label>
-              <input type="text" value={form.zipCode} onChange={setField('zipCode')} required />
+            <div className={fieldGroupClass('zipCode')}>
+              <label>Zip Code</label>
+              <input type="text" value={form.zipCode} onChange={setField('zipCode')} />
             </div>
 
-            <div className="field-group">
+            <div className={fieldGroupClass('homePhone')}>
               <label>Home Phone Number</label>
               <input type="tel" value={form.homePhone} onChange={setField('homePhone')} />
             </div>
 
-            <div className="field-group">
-              <label>Anniversary (MM/DD)</label>
+            <div className={fieldGroupClass('anniversary')}>
+              <label>Anniversary</label>
               <input
                 type="text"
-                placeholder="MM/DD"
-                pattern="(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])"
-                title="Enter the month and day, e.g. 06/14"
+                placeholder="MM/DD/YYYY"
+                pattern="(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])(/\d{4})?"
+                title="Enter the month and day, and optionally the year, e.g. 06/14 or 06/14/1990"
                 value={form.anniversary}
                 onChange={setField('anniversary')}
               />
@@ -261,6 +241,7 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
             onChange={updateIndividual}
             onRemove={removeIndividual}
             removable={individual.role !== 'head'}
+            changedFields={changedFields?.individuals?.[index]}
           />
         ))}
 

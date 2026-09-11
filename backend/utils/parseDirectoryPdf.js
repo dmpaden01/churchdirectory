@@ -4,7 +4,7 @@
 // family records for a human to review and complete in the admin UI rather
 // than records that get saved directly.
 
-import { normalizeAnniversary } from './anniversary.js';
+import { normalizeMonthDayYear } from './monthDayYear.js';
 
 const NOISE_LINE_PATTERNS = [
   /^Church Directory$/,
@@ -59,12 +59,15 @@ function parseAddressLine(line) {
   return { address, city, state, zipCode };
 }
 
-// mm/dd/yyyy -> yyyy-mm-dd (for direct use in <input type="date">); returns '' if only mm/dd.
-function toIsoDate(mmddyyyy) {
-  const parts = mmddyyyy.split('/');
-  if (parts.length !== 3) return '';
-  const [mm, dd, yyyy] = parts;
-  return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+// Normalizes a matched "M/D", "M/D/YY", or "M/D/YYYY" source value to "MM/DD"
+// or "MM/DD/YYYY". Falls back to dropping a non-4-digit year (rare in this
+// source format) rather than losing the whole value.
+function normalizeDateMatch(raw) {
+  if (!raw) return '';
+  const direct = normalizeMonthDayYear(raw);
+  if (direct) return direct;
+  const [mm, dd] = raw.split('/');
+  return normalizeMonthDayYear(`${mm}/${dd}`) || '';
 }
 
 // forcedLastName: when given (the head of household), the header's surname is
@@ -127,7 +130,7 @@ function parseFamilyBlock(lines) {
     ({ address, city, state, zipCode } = parseAddressLine(lines[i]));
     i++;
   } else {
-    notes.push('No address found in source - please fill in manually.');
+    notes.push('No address found in source.');
   }
 
   const personChunks = [];
@@ -160,13 +163,9 @@ function parseFamilyBlock(lines) {
     const displayName = `${firstName} ${lastName}`.trim() || `Person ${index + 1}`;
 
     if (annivMatch && !anniversary) {
-      const [mm, dd] = annivMatch[1].split('/');
-      anniversary = normalizeAnniversary(`${mm}/${dd}`) || '';
+      anniversary = normalizeDateMatch(annivMatch[1]);
     }
     if (deceased) notes.push(`${displayName} is marked as deceased in the source data.`);
-    if (birthdayMatch && birthdayMatch[1].split('/').length === 2) {
-      notes.push(`${displayName}'s birthday only has month/day in the source (year unknown): ${birthdayMatch[1]}`);
-    }
 
     let role = 'child';
     if (index === 0) role = 'head';
@@ -179,7 +178,7 @@ function parseFamilyBlock(lines) {
       roleStatus: deceased ? 'Deceased' : '',
       cellPhone: cellMatch ? cellMatch[1] : '',
       email: emailMatch ? emailMatch[1].replace(/[.,]$/, '') : '',
-      birthday: birthdayMatch && birthdayMatch[1].split('/').length === 3 ? toIsoDate(birthdayMatch[1]) : '',
+      birthday: normalizeDateMatch(birthdayMatch?.[1]),
     };
   });
 
@@ -289,4 +288,50 @@ export function attachPhotos(families, imageNameToFamilyIndex, imagesByName) {
 // Drops fields used only internally during parsing/matching, before sending drafts to the client.
 export function stripInternalFields(families) {
   return families.map(({ _headerPrefix, _pageNum, ...rest }) => rest);
+}
+
+const FAMILY_COMPARE_FIELDS = ['address', 'aptSuite', 'city', 'state', 'zipCode', 'homePhone', 'anniversary'];
+const INDIVIDUAL_COMPARE_FIELDS = ['firstName', 'lastName', 'roleStatus', 'cellPhone', 'email', 'birthday'];
+
+function normalizeForCompare(value) {
+  return (value || '').toString().trim().toLowerCase();
+}
+
+function fieldsDiffer(a, b) {
+  return normalizeForCompare(a) !== normalizeForCompare(b);
+}
+
+function toBuffer(data) {
+  if (!data) return null;
+  if (Buffer.isBuffer(data)) return data;
+  if (data.buffer) return Buffer.from(data.buffer);
+  return Buffer.from(data);
+}
+
+function photoDataUrlToBuffer(dataUrl) {
+  return Buffer.from(dataUrl.split(',')[1] || '', 'base64');
+}
+
+// True if saving this draft over the matched existing family would change
+// nothing at all - same address-block fields, same individuals in the same
+// order, and the same photo. A draft with no photo extracted from the PDF
+// counts as "no photo difference" too, since saving leaves an existing photo
+// untouched when the draft doesn't supply a new one.
+export function isDraftIdenticalToFamily(draft, family) {
+  const fieldsMatch = FAMILY_COMPARE_FIELDS.every((f) => !fieldsDiffer(family[f], draft[f]));
+  if (!fieldsMatch) return false;
+
+  if (draft.individuals.length !== family.individuals.length) return false;
+  const individualsMatch = draft.individuals.every((draftInd, index) => {
+    const existingInd = family.individuals[index];
+    return INDIVIDUAL_COMPARE_FIELDS.every((f) => !fieldsDiffer(existingInd?.[f], draftInd[f]));
+  });
+  if (!individualsMatch) return false;
+
+  if (draft.photoDataUrl) {
+    const existingPhoto = toBuffer(family.photo?.data);
+    if (!existingPhoto || !photoDataUrlToBuffer(draft.photoDataUrl).equals(existingPhoto)) return false;
+  }
+
+  return true;
 }

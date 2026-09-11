@@ -12,6 +12,31 @@
   padding-left: 20px;
 }
 
+.needs-review-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.needs-review-toggle.active {
+  background: rgba(217, 119, 6, 0.1);
+  border-color: rgba(217, 119, 6, 0.35);
+}
+
+.needs-review-hint {
+  flex-basis: 100%;
+  font-weight: 400;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
 .family-form {
   display: flex;
   flex-direction: column;
@@ -73,12 +98,43 @@
   color: var(--text-h);
 }
 
+/* Flags a field where a PDF-import draft's value differs from what's already
+   saved, so a reviewer can spot exactly what changed without comparing every
+   field by hand. */
+.field-group.field-changed label {
+  color: #2f7dd1;
+}
+
+.field-group.field-changed label::after {
+  content: 'Changed';
+  margin-left: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #2f7dd1;
+  background: rgba(47, 125, 209, 0.12);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.field-group.field-changed input,
+.field-group.field-changed select {
+  border-color: #2f7dd1;
+  background: rgba(47, 125, 209, 0.07);
+}
+
 .individual-fieldset {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 10px;
   min-width: 0;
+}
+
+.individual-fieldset.has-changes {
+  border-color: #2f7dd1;
+  background: rgba(47, 125, 209, 0.04);
 }
 
 .individual-fieldset legend {

@@ -4,10 +4,11 @@ import './ImportPdf.css';
 
 // Uploads a legacy "Church Directory" PDF, parses it into draft family records
 // server-side, and lets the admin work through the batch one family at a time.
-export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onReview, onSkip, onDone }) {
+export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onReview, onSkip, onAcceptAll, accepting, onDone }) {
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [skippedUpToDateCount, setSkippedUpToDateCount] = useState(0);
   const inputRef = useRef(null);
 
   const handleFile = async (file) => {
@@ -18,9 +19,11 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
     }
     setLoading(true);
     setError(null);
+    setSkippedUpToDateCount(0);
     try {
-      const { families } = await parseDirectoryPdf(file);
+      const { families, skippedUpToDateCount } = await parseDirectoryPdf(file);
       const withKeys = families.map((f, i) => ({ ...f, _key: `${Date.now()}-${i}` }));
+      setSkippedUpToDateCount(skippedUpToDateCount || 0);
       onParsed(withKeys);
     } catch (err) {
       setError(err.message);
@@ -31,6 +34,15 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
   };
 
   const importedCount = totalCount === null ? null : totalCount - parsedFamilies.length;
+
+  const handleAcceptAll = () => {
+    const confirmed = window.confirm(
+      `Accept all ${parsedFamilies.length} remaining famil${parsedFamilies.length === 1 ? 'y' : 'ies'} without reviewing them individually?\n\n` +
+      'This imported data could be incorrect (e.g. mismatched photos or parsing errors). ' +
+      'These families will be saved as-is and marked "Needs Review" so an admin can double-check them later.',
+    );
+    if (confirmed) onAcceptAll();
+  };
 
   return (
     <div className="import-pdf">
@@ -61,11 +73,25 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
 
       {error && <div className="form-error">{error}</div>}
 
+      {skippedUpToDateCount > 0 && (
+        <p className="import-pdf-skipped-note">
+          {skippedUpToDateCount} famil{skippedUpToDateCount === 1 ? 'y' : 'ies'} already matched what&rsquo;s
+          saved exactly (including photo) and {skippedUpToDateCount === 1 ? 'was' : 'were'} skipped automatically.
+        </p>
+      )}
+
       {parsedFamilies.length > 0 && (
         <>
-          <p className="import-pdf-progress">
-            {importedCount} of {totalCount} handled &mdash; {parsedFamilies.length} remaining
-          </p>
+          <div className="import-pdf-progress-row">
+            <p className="import-pdf-progress">
+              {accepting
+                ? `Accepting remaining families... ${parsedFamilies.length} left`
+                : <>{importedCount} of {totalCount} handled &mdash; {parsedFamilies.length} remaining</>}
+            </p>
+            <button type="button" onClick={handleAcceptAll} disabled={accepting}>
+              Accept All Changes
+            </button>
+          </div>
           <ul className="import-results">
             {parsedFamilies.map((f) => {
               const head = f.individuals[0];
@@ -94,10 +120,10 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
                     )}
                   </div>
                   <div className="import-result-actions">
-                    <button type="button" className="primary-btn" onClick={() => onReview(f._key)}>
+                    <button type="button" className="primary-btn" onClick={() => onReview(f._key)} disabled={accepting}>
                       Review & Save
                     </button>
-                    <button type="button" onClick={() => onSkip(f._key)}>
+                    <button type="button" onClick={() => onSkip(f._key)} disabled={accepting}>
                       Skip
                     </button>
                   </div>

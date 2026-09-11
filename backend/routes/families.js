@@ -10,9 +10,11 @@ import {
   buildPhotoMatchEntries,
   attachPhotos,
   stripInternalFields,
+  isDraftIdenticalToFamily,
 } from '../utils/parseDirectoryPdf.js';
 import { matchImagesToFamilies } from '../utils/pdfPhotoMatcher.js';
 import { normalizeAnniversary } from '../utils/anniversary.js';
+import { normalizeBirthday } from '../utils/birthday.js';
 
 const router = express.Router();
 
@@ -48,7 +50,7 @@ function buildIndividuals(rawIndividuals, existingIndividuals, files) {
       roleStatus: raw.roleStatus || undefined,
       cellPhone: raw.cellPhone || undefined,
       email: raw.email || undefined,
-      birthday: raw.birthday || undefined,
+      birthday: normalizeBirthday(raw.birthday),
       photo,
     };
   });
@@ -100,7 +102,26 @@ router.post('/parse-pdf', requireRole('admin'), uploadPdf.single('pdf'), async (
       }
     }
 
-    res.json({ families: stripInternalFields(families) });
+    // Drop drafts that exactly match what's already saved (address, every
+    // field, and the photo) - nothing would change if saved, so there's
+    // nothing to review.
+    const addressMatchIds = [...new Set(
+      families.filter((f) => f.existingMatch === 'address').map((f) => f.existingFamilyId),
+    )];
+    let skippedUpToDateCount = 0;
+    if (addressMatchIds.length > 0) {
+      const fullExisting = await Family.find({ _id: { $in: addressMatchIds } }).lean();
+      const existingById = new Map(fullExisting.map((f) => [String(f._id), f]));
+      const before = families.length;
+      families = families.filter((f) => {
+        if (f.existingMatch !== 'address') return true;
+        const existing = existingById.get(f.existingFamilyId);
+        return !(existing && isDraftIdenticalToFamily(f, existing));
+      });
+      skippedUpToDateCount = before - families.length;
+    }
+
+    res.json({ families: stripInternalFields(families), skippedUpToDateCount });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -170,6 +191,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
       zipCode: payload.zipCode,
       homePhone: payload.homePhone || undefined,
       anniversary: normalizeAnniversary(payload.anniversary),
+      needsReview: Boolean(payload.needsReview),
       photo,
       individuals,
     });
@@ -211,6 +233,7 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
     existing.zipCode = payload.zipCode;
     existing.homePhone = payload.homePhone || undefined;
     existing.anniversary = normalizeAnniversary(payload.anniversary);
+    existing.needsReview = Boolean(payload.needsReview);
     existing.photo = photo;
     existing.individuals = individuals;
 

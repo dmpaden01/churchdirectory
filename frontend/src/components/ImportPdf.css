@@ -3,6 +3,12 @@
   margin-bottom: 16px;
 }
 
+.import-pdf-skipped-note {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+
 .import-dropzone {
   border: 2px dashed #9ca3af;
   border-radius: 10px;
@@ -25,9 +31,34 @@
   display: none;
 }
 
+.import-pdf-progress-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
 .import-pdf-progress {
   color: var(--text);
-  margin-bottom: 12px;
+  margin: 0;
+}
+
+.import-pdf-progress-row button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--text-h);
+  white-space: nowrap;
+}
+
+.import-pdf-progress-row button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .import-results {

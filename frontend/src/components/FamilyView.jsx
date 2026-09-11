@@ -7,11 +7,6 @@ const ROLE_LABELS = {
   child: 'Child',
 };
 
-function formatDate(value) {
-  if (!value) return '';
-  return new Date(value).toLocaleDateString('en-US', { timeZone: 'UTC' });
-}
-
 // One person, condensed onto a single line: name, role tag, then whatever
 // details are actually present, separated by dots.
 function MemberLine({ individual }) {
@@ -19,7 +14,7 @@ function MemberLine({ individual }) {
     individual.roleStatus,
     individual.cellPhone,
     individual.email,
-    formatDate(individual.birthday),
+    individual.birthday,
   ].filter(Boolean);
 
   return (

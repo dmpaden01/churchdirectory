@@ -8,8 +8,9 @@ import ChangePasswordForm from './components/ChangePasswordForm';
 import NotificationSettingsForm from './components/NotificationSettingsForm';
 import SiteLogo from './components/SiteLogo';
 import SettingsPage from './SettingsPage';
-import { getFamily } from './api/families';
+import { getFamily, createFamily, updateFamily } from './api/families';
 import { logout } from './api/auth';
+import { draftToFormState } from './utils/draftFamily';
 import './DirectoryPage.css';
 
 const FAMILY_VIEWS = ['search', 'viewFamily', 'form', 'import', 'import-form'];
@@ -30,6 +31,7 @@ export default function DirectoryPage({ user, onLoggedOut }) {
   const [totalParsedCount, setTotalParsedCount] = useState(null);
   const [activeDraftKey, setActiveDraftKey] = useState(null);
   const [matchedFamily, setMatchedFamily] = useState(null);
+  const [bulkAccepting, setBulkAccepting] = useState(false);
 
   const openAddNew = () => {
     if (!isAdmin) return;
@@ -53,6 +55,23 @@ export default function DirectoryPage({ user, onLoggedOut }) {
   const openEdit = () => {
     if (!isAdmin) return;
     setView('form');
+  };
+
+  // "Needs Review" button in the search list - jumps straight into the edit
+  // form instead of the read-only view, since the whole point is a fast path
+  // to fixing/clearing a flagged family.
+  const openReview = async (id) => {
+    if (!isAdmin) return;
+    setLoadingFamily(true);
+    try {
+      const family = await getFamily(id);
+      setActiveFamily(family);
+      setView('form');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setLoadingFamily(false);
+    }
   };
 
   const backToSearch = () => {
@@ -113,6 +132,35 @@ export default function DirectoryPage({ user, onLoggedOut }) {
     setActiveDraftKey(null);
     setMatchedFamily(null);
     setView('import');
+  };
+
+  // Saves every remaining parsed family as-is, without individual review,
+  // each flagged needsReview so it can be found and double-checked later.
+  // Matched-by-address drafts update that family (same as manual review);
+  // everything else creates a new one. Removes each family from the pending
+  // list as it succeeds so the progress count updates live; anything that
+  // fails to save stays in the list for a retry.
+  const acceptAllDrafts = async () => {
+    setBulkAccepting(true);
+    const failures = [];
+    for (const draft of parsedFamilies) {
+      try {
+        const formState = draftToFormState(draft, { needsReview: true });
+        if (draft.existingFamilyId) {
+          await updateFamily(draft.existingFamilyId, formState);
+        } else {
+          await createFamily(formState);
+        }
+        setParsedFamilies((prev) => prev.filter((f) => f._key !== draft._key));
+      } catch (err) {
+        failures.push(`${draft.individuals[0]?.lastName || 'Unknown'}: ${err.message}`);
+      }
+    }
+    setBulkAccepting(false);
+    setRefreshToken((t) => t + 1);
+    if (failures.length > 0) {
+      alert(`${failures.length} famil${failures.length === 1 ? 'y' : 'ies'} could not be saved and remain in the list:\n\n${failures.join('\n')}`);
+    }
   };
 
   const activeDraft = parsedFamilies.find((f) => f._key === activeDraftKey) || null;
@@ -189,6 +237,7 @@ export default function DirectoryPage({ user, onLoggedOut }) {
           onSelectFamily={openFamily}
           onAddNew={openAddNew}
           onImport={openImport}
+          onReviewFamily={openReview}
           refreshToken={refreshToken}
           isAdmin={isAdmin}
         />
@@ -219,6 +268,8 @@ export default function DirectoryPage({ user, onLoggedOut }) {
           onParsed={familiesParsed}
           onReview={reviewDraft}
           onSkip={skipDraft}
+          onAcceptAll={acceptAllDrafts}
+          accepting={bulkAccepting}
           onDone={backToSearch}
         />
       )}
