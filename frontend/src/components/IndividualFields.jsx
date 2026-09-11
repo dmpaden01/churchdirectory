@@ -52,13 +52,8 @@ export default function IndividualFields({
           </div>
 
           <div className="field-group">
-            <label>Gender *</label>
-            <select value={individual.gender || ''} onChange={set('gender')} required>
-              <option value="" disabled>Select...</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
+            <label>Role/Status</label>
+            <input type="text" value={individual.roleStatus || ''} onChange={set('roleStatus')} />
           </div>
 
           <div className="field-group">

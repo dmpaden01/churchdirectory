@@ -25,6 +25,7 @@ export default function DirectoryPage({ user, onLoggedOut }) {
   const [parsedFamilies, setParsedFamilies] = useState([]);
   const [totalParsedCount, setTotalParsedCount] = useState(null);
   const [activeDraftKey, setActiveDraftKey] = useState(null);
+  const [matchedFamily, setMatchedFamily] = useState(null);
 
   const openAddNew = () => {
     if (!isAdmin) return;
@@ -71,8 +72,24 @@ export default function DirectoryPage({ user, onLoggedOut }) {
     setTotalParsedCount(families.length);
   };
 
-  const reviewDraft = (key) => {
+  // If the import matched an existing family by address, fetch its full record
+  // first so the form mounts already in "edit" mode - Review & Save then updates
+  // that family instead of creating a duplicate.
+  const reviewDraft = async (key) => {
+    const draft = parsedFamilies.find((f) => f._key === key);
     setActiveDraftKey(key);
+    if (draft?.existingFamilyId) {
+      setLoadingFamily(true);
+      try {
+        setMatchedFamily(await getFamily(draft.existingFamilyId));
+      } catch {
+        setMatchedFamily(null);
+      } finally {
+        setLoadingFamily(false);
+      }
+    } else {
+      setMatchedFamily(null);
+    }
     setView('import-form');
   };
 
@@ -83,12 +100,14 @@ export default function DirectoryPage({ user, onLoggedOut }) {
   const draftSaved = () => {
     setParsedFamilies((prev) => prev.filter((f) => f._key !== activeDraftKey));
     setActiveDraftKey(null);
+    setMatchedFamily(null);
     setView('import');
     setRefreshToken((t) => t + 1);
   };
 
   const draftCanceled = () => {
     setActiveDraftKey(null);
+    setMatchedFamily(null);
     setView('import');
   };
 
@@ -195,10 +214,12 @@ export default function DirectoryPage({ user, onLoggedOut }) {
         />
       )}
 
-      {view === 'import-form' && isAdmin && (
+      {view === 'import-form' && !loadingFamily && isAdmin && (
         <FamilyForm
+          family={matchedFamily}
           draft={activeDraft}
           onSaved={draftSaved}
+          onDeleted={draftSaved}
           onCancel={draftCanceled}
         />
       )}

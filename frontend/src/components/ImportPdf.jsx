@@ -37,8 +37,7 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
       <h2>Import Families from PDF</h2>
       <p className="import-pdf-hint">
         Upload a legacy directory PDF export. Each family found in the file will be parsed into a
-        draft you can review, complete (gender is not in the source and must be set manually), and save
-        individually.
+        draft you can review, complete, and save individually.
       </p>
 
       <div
@@ -85,7 +84,7 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
                       {f.city}{f.city && f.state ? ', ' : ''}{f.state}
                     </span>
                     {f.existingMatch === 'address' && (
-                      <span className="import-result-duplicate">Already in your directory</span>
+                      <span className="import-result-duplicate">Already in your directory — saving will update it</span>
                     )}
                     {f.existingMatch === 'name' && (
                       <span className="import-result-duplicate">Possible match already in your directory</span>
@@ -95,18 +94,10 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
                     )}
                   </div>
                   <div className="import-result-actions">
-                    <button
-                      type="button"
-                      className={f.existingMatch === 'address' ? '' : 'primary-btn'}
-                      onClick={() => onReview(f._key)}
-                    >
+                    <button type="button" className="primary-btn" onClick={() => onReview(f._key)}>
                       Review & Save
                     </button>
-                    <button
-                      type="button"
-                      className={f.existingMatch === 'address' ? 'primary-btn' : ''}
-                      onClick={() => onSkip(f._key)}
-                    >
+                    <button type="button" onClick={() => onSkip(f._key)}>
                       Skip
                     </button>
                   </div>

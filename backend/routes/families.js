@@ -12,6 +12,7 @@ import {
   stripInternalFields,
 } from '../utils/parseDirectoryPdf.js';
 import { matchImagesToFamilies } from '../utils/pdfPhotoMatcher.js';
+import { normalizeAnniversary } from '../utils/anniversary.js';
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ function buildIndividuals(rawIndividuals, existingIndividuals, files) {
       role: raw.role,
       firstName: raw.firstName,
       lastName: raw.lastName,
-      gender: raw.gender,
+      roleStatus: raw.roleStatus || undefined,
       cellPhone: raw.cellPhone || undefined,
       email: raw.email || undefined,
       birthday: raw.birthday || undefined,
@@ -168,7 +169,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
       state: payload.state,
       zipCode: payload.zipCode,
       homePhone: payload.homePhone || undefined,
-      anniversary: payload.anniversary || undefined,
+      anniversary: normalizeAnniversary(payload.anniversary),
       photo,
       individuals,
     });
@@ -209,7 +210,7 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
     existing.state = payload.state;
     existing.zipCode = payload.zipCode;
     existing.homePhone = payload.homePhone || undefined;
-    existing.anniversary = payload.anniversary || undefined;
+    existing.anniversary = normalizeAnniversary(payload.anniversary);
     existing.photo = photo;
     existing.individuals = individuals;
 

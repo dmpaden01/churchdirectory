@@ -16,7 +16,7 @@ function formatDate(value) {
 // details are actually present, separated by dots.
 function MemberLine({ individual }) {
   const details = [
-    individual.gender,
+    individual.roleStatus,
     individual.cellPhone,
     individual.email,
     formatDate(individual.birthday),
@@ -99,7 +99,7 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack }) {
             )}
             {family.homePhone && <div className="family-card-extra">{family.homePhone}</div>}
             {family.anniversary && (
-              <div className="family-card-extra">Anniversary: {formatDate(family.anniversary)}</div>
+              <div className="family-card-extra">Anniversary: {family.anniversary}</div>
             )}
           </address>
         </div>

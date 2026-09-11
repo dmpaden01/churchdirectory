@@ -25,72 +25,86 @@ function emptyIndividual(role) {
     role,
     firstName: '',
     lastName: '',
-    gender: '',
+    roleStatus: '',
     cellPhone: '',
     email: '',
     birthday: '',
   };
 }
 
+function draftIndividualToFormState(ind) {
+  return {
+    role: ind.role,
+    firstName: ind.firstName || '',
+    lastName: ind.lastName || '',
+    roleStatus: ind.roleStatus || '',
+    cellPhone: ind.cellPhone || '',
+    email: ind.email || '',
+    birthday: toDateInputValue(ind.birthday),
+  };
+}
+
 function familyToFormState(family, draft) {
-  if (!family) {
-    if (draft) {
-      return {
-        address: draft.address || '',
-        aptSuite: draft.aptSuite || '',
-        city: draft.city || '',
-        state: draft.state || '',
-        zipCode: draft.zipCode || '',
-        homePhone: draft.homePhone || '',
-        anniversary: toDateInputValue(draft.anniversary),
-        photoPath: draft.photoDataUrl || undefined,
-        photoFile: draft.photoDataUrl ? dataUrlToFile(draft.photoDataUrl, 'imported-family-photo.png') : undefined,
-        removeFamilyPhoto: false,
-        individuals: draft.individuals.map((ind) => ({
-          role: ind.role,
-          firstName: ind.firstName || '',
-          lastName: ind.lastName || '',
-          gender: ind.gender || '',
-          cellPhone: ind.cellPhone || '',
-          email: ind.email || '',
-          birthday: toDateInputValue(ind.birthday),
-        })),
-      };
-    }
+  if (family) {
+    // Editing an existing family. If a PDF-import draft is also given, the import
+    // matched this family by address - prefill with the freshly parsed PDF data
+    // (not what's currently saved) so Review & Save updates this record instead
+    // of creating a duplicate. The individuals list is fully replaced by the
+    // draft's in that case, so existing per-person photos aren't carried over
+    // (there's no reliable way to match old people to new ones).
+    const source = draft || family;
     return {
-      address: '',
-      aptSuite: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      homePhone: '',
-      anniversary: '',
-      photoPath: undefined,
+      address: source.address || '',
+      aptSuite: source.aptSuite || '',
+      city: source.city || '',
+      state: source.state || '',
+      zipCode: source.zipCode || '',
+      homePhone: source.homePhone || '',
+      anniversary: source.anniversary || '',
+      photoPath: draft?.photoDataUrl || familyPhotoUrl(family),
+      photoFile: draft?.photoDataUrl ? dataUrlToFile(draft.photoDataUrl, 'imported-family-photo.png') : undefined,
       removeFamilyPhoto: false,
-      individuals: [emptyIndividual('head')],
+      individuals: draft
+        ? draft.individuals.map(draftIndividualToFormState)
+        : family.individuals.map((ind, index) => ({
+            role: ind.role,
+            firstName: ind.firstName || '',
+            lastName: ind.lastName || '',
+            roleStatus: ind.roleStatus || '',
+            cellPhone: ind.cellPhone || '',
+            email: ind.email || '',
+            birthday: toDateInputValue(ind.birthday),
+            photoPath: individualPhotoUrl(family._id, index, ind),
+            removePhoto: false,
+          })),
+    };
+  }
+  if (draft) {
+    return {
+      address: draft.address || '',
+      aptSuite: draft.aptSuite || '',
+      city: draft.city || '',
+      state: draft.state || '',
+      zipCode: draft.zipCode || '',
+      homePhone: draft.homePhone || '',
+      anniversary: draft.anniversary || '',
+      photoPath: draft.photoDataUrl || undefined,
+      photoFile: draft.photoDataUrl ? dataUrlToFile(draft.photoDataUrl, 'imported-family-photo.png') : undefined,
+      removeFamilyPhoto: false,
+      individuals: draft.individuals.map(draftIndividualToFormState),
     };
   }
   return {
-    address: family.address || '',
-    aptSuite: family.aptSuite || '',
-    city: family.city || '',
-    state: family.state || '',
-    zipCode: family.zipCode || '',
-    homePhone: family.homePhone || '',
-    anniversary: toDateInputValue(family.anniversary),
-    photoPath: familyPhotoUrl(family),
+    address: '',
+    aptSuite: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    homePhone: '',
+    anniversary: '',
+    photoPath: undefined,
     removeFamilyPhoto: false,
-    individuals: family.individuals.map((ind, index) => ({
-      role: ind.role,
-      firstName: ind.firstName || '',
-      lastName: ind.lastName || '',
-      gender: ind.gender || '',
-      cellPhone: ind.cellPhone || '',
-      email: ind.email || '',
-      birthday: toDateInputValue(ind.birthday),
-      photoPath: individualPhotoUrl(family._id, index, ind),
-      removePhoto: false,
-    })),
+    individuals: [emptyIndividual('head')],
   };
 }
 
@@ -223,8 +237,15 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
             </div>
 
             <div className="field-group">
-              <label>Anniversary</label>
-              <input type="date" value={form.anniversary} onChange={setField('anniversary')} />
+              <label>Anniversary (MM/DD)</label>
+              <input
+                type="text"
+                placeholder="MM/DD"
+                pattern="(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])"
+                title="Enter the month and day, e.g. 06/14"
+                value={form.anniversary}
+                onChange={setField('anniversary')}
+              />
             </div>
           </div>
         </div>

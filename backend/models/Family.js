@@ -18,11 +18,7 @@ const individualSchema = new Schema({
   },
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
-  gender: {
-    type: String,
-    enum: ['Male', 'Female', 'Other'],
-    required: true,
-  },
+  roleStatus: { type: String, trim: true },
   cellPhone: { type: String, trim: true },
   email: { type: String, trim: true },
   birthday: { type: Date },
@@ -38,7 +34,7 @@ const familySchema = new Schema(
     state: { type: String, required: true, trim: true },
     zipCode: { type: String, required: true, trim: true },
     homePhone: { type: String, trim: true },
-    anniversary: { type: Date },
+    anniversary: { type: String, trim: true },
     photo: { type: photoSchema },
     individuals: {
       type: [individualSchema],

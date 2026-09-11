@@ -1,8 +1,10 @@
 // Best-effort parser for the legacy "Church Directory" PDF export format.
 // The source text is semi-structured and inconsistent (wrapped lines, missing
-// zip/state, nicknames in parens, deceased flags, no gender data at all), so
-// this produces draft family records for a human to review and complete in
-// the admin UI rather than records that get saved directly.
+// zip/state, nicknames in parens, deceased flags), so this produces draft
+// family records for a human to review and complete in the admin UI rather
+// than records that get saved directly.
+
+import { normalizeAnniversary } from './anniversary.js';
 
 const NOISE_LINE_PATTERNS = [
   /^Church Directory$/,
@@ -158,8 +160,8 @@ function parseFamilyBlock(lines) {
     const displayName = `${firstName} ${lastName}`.trim() || `Person ${index + 1}`;
 
     if (annivMatch && !anniversary) {
-      if (annivMatch[1].split('/').length === 3) anniversary = toIsoDate(annivMatch[1]);
-      else notes.push(`Anniversary date incomplete in source (month/day only): ${annivMatch[1]}`);
+      const [mm, dd] = annivMatch[1].split('/');
+      anniversary = normalizeAnniversary(`${mm}/${dd}`) || '';
     }
     if (deceased) notes.push(`${displayName} is marked as deceased in the source data.`);
     if (birthdayMatch && birthdayMatch[1].split('/').length === 2) {
@@ -174,7 +176,7 @@ function parseFamilyBlock(lines) {
       role,
       firstName: firstName || `Person ${index + 1}`,
       lastName: lastName || familyLastName,
-      gender: '',
+      roleStatus: deceased ? 'Deceased' : '',
       cellPhone: cellMatch ? cellMatch[1] : '',
       email: emailMatch ? emailMatch[1].replace(/[.,]$/, '') : '',
       birthday: birthdayMatch && birthdayMatch[1].split('/').length === 3 ? toIsoDate(birthdayMatch[1]) : '',
@@ -182,7 +184,7 @@ function parseFamilyBlock(lines) {
   });
 
   if (individuals.length === 0) {
-    individuals.push({ role: 'head', firstName: '', lastName: familyLastName, gender: '', cellPhone: '', email: '', birthday: '' });
+    individuals.push({ role: 'head', firstName: '', lastName: familyLastName, cellPhone: '', email: '', birthday: '' });
     notes.push('No family member details were found in the source for this entry.');
   }
 
@@ -210,7 +212,7 @@ function normalize(str) {
 export function parseDirectoryPdf(rawText, pages = []) {
   const lines = cleanLines(rawText);
   const blocks = segmentFamilies(lines);
-  const families = blocks.map((block, index) => {
+  const families = blocks.map((block) => {
     const family = parseFamilyBlock(block);
     const page = pages.find((p) => p.text.includes(block[0]));
     family._pageNum = page ? page.num : null;
@@ -240,7 +242,7 @@ export function flagExistingMatches(families, existingFamilies) {
     const nameKey = normalize(lastName);
     const addressKey = normalize(family.address);
 
-    const addressMatch = addressKey && existingFamilies.some(
+    const addressMatch = addressKey && existingFamilies.find(
       (existing) => normalize(existing.familyName) === nameKey && normalize(existing.address) === addressKey,
     );
     const nameMatch = !addressMatch && existingFamilies.some(
@@ -248,15 +250,17 @@ export function flagExistingMatches(families, existingFamilies) {
     );
 
     let existingMatch = null;
+    let existingFamilyId = null;
     if (addressMatch) {
       existingMatch = 'address';
-      family.notes.push(`A "${lastName}" family already exists in your directory at this address — saving this will create a duplicate.`);
+      existingFamilyId = String(addressMatch._id);
+      family.notes.push(`A "${lastName}" family already exists in your directory at this address — saving this will update that family instead of creating a new one.`);
     } else if (nameMatch) {
       existingMatch = 'name';
       family.notes.push(`A family named "${lastName}" already exists in your directory. Double-check this isn't the same family before saving.`);
     }
 
-    return { ...family, existingMatch };
+    return { ...family, existingMatch, existingFamilyId };
   });
 }
 
