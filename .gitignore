@@ -12,6 +12,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.proddb
 
 # Uploaded family/individual photos (runtime data, not source)
 backend/uploads/
