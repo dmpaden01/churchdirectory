@@ -37,6 +37,18 @@ export async function changePassword(currentPassword, newPassword) {
   }
 }
 
+export async function updateNotificationSettings(receiveAdminNotifications) {
+  const res = await fetch(`${BASE_URL}/notification-settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ receiveAdminNotifications }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update notification settings');
+  }
+}
+
 export async function register(email, firstName, lastName) {
   const res = await fetch(`${BASE_URL}/register`, {
     method: 'POST',

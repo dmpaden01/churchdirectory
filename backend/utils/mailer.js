@@ -69,6 +69,23 @@ export function sendApprovalEmail(to, firstName, token) {
   });
 }
 
+export function sendAdminNotificationEmail(to, registrant) {
+  const url = `${process.env.FRONTEND_PUBLIC_URL}/?view=users`;
+  return sendMail({
+    to,
+    subject: 'New registration awaiting approval - Church Directory',
+    html: `
+      <p style="font-family:sans-serif;">A new user has verified their email and is awaiting approval:</p>
+      <table style="font-family:sans-serif;border-collapse:collapse;">
+        <tr><td style="padding:4px 12px 4px 0;color:#666;">Name</td><td>${registrant.firstName} ${registrant.lastName}</td></tr>
+        <tr><td style="padding:4px 12px 4px 0;color:#666;">Email</td><td>${registrant.username}</td></tr>
+        <tr><td style="padding:4px 12px 4px 0;color:#666;">Requested</td><td>${registrant.createdAt.toLocaleString('en-US')}</td></tr>
+      </table>
+      ${button(url, 'Review Pending Users')}
+    `,
+  });
+}
+
 export function sendDenialEmail(to, firstName) {
   return sendMail({
     to,

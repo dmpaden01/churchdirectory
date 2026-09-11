@@ -3,8 +3,8 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { requireAuth, AUTH_COOKIE } from '../middleware/auth.js';
-import { sendVerificationEmail } from '../utils/mailer.js';
+import { requireAuth, requireRole, AUTH_COOKIE } from '../middleware/auth.js';
+import { sendVerificationEmail, sendAdminNotificationEmail } from '../utils/mailer.js';
 
 const router = express.Router();
 
@@ -89,8 +89,13 @@ router.post('/logout', (req, res) => {
 });
 
 // GET /api/auth/me
-router.get('/me', requireAuth, (req, res) => {
-  res.json({ username: req.user.username, role: req.user.role });
+router.get('/me', requireAuth, async (req, res) => {
+  const user = await User.findById(req.user.id);
+  res.json({
+    username: req.user.username,
+    role: req.user.role,
+    receiveAdminNotifications: user.receiveAdminNotifications,
+  });
 });
 
 // PUT /api/auth/password - change your own password (requires current password)
@@ -111,6 +116,25 @@ router.put('/password', requireAuth, async (req, res) => {
     if (!valid) return res.status(401).json({ error: 'Current password is incorrect.' });
 
     user.passwordHash = await bcrypt.hash(newPassword, 12);
+    await user.save();
+    res.status(204).end();
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT /api/auth/notification-settings - admin opts in/out of new-registration emails
+router.put('/notification-settings', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const { receiveAdminNotifications } = req.body;
+    if (typeof receiveAdminNotifications !== 'boolean') {
+      return res.status(400).json({ error: 'receiveAdminNotifications must be a boolean.' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    user.receiveAdminNotifications = receiveAdminNotifications;
     await user.save();
     res.status(204).end();
   } catch (err) {
@@ -191,6 +215,18 @@ router.get('/verify-email', async (req, res) => {
     user.emailVerifyToken = undefined;
     user.emailVerifyTokenExpires = undefined;
     await user.save();
+
+    // Best-effort: a failed admin notification shouldn't block the user from
+    // seeing their verification succeeded, nor stop other admins being notified.
+    const admins = await User.find({ role: 'admin', receiveAdminNotifications: true });
+    const adminEmails = admins.map((admin) => admin.username).filter((username) => EMAIL_RE.test(username));
+    await Promise.all(
+      adminEmails.map((adminEmail) =>
+        sendAdminNotificationEmail(adminEmail, user).catch((err) => {
+          console.error(`Failed to notify admin ${adminEmail} of new registration:`, err.message);
+        }),
+      ),
+    );
 
     res.send(htmlPage(
       'Email Verified',

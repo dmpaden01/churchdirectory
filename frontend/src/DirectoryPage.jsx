@@ -5,6 +5,7 @@ import FamilyForm from './components/FamilyForm';
 import ImportPdf from './components/ImportPdf';
 import UserManagement from './components/UserManagement';
 import ChangePasswordForm from './components/ChangePasswordForm';
+import NotificationSettingsForm from './components/NotificationSettingsForm';
 import SiteLogo from './components/SiteLogo';
 import SettingsPage from './SettingsPage';
 import { getFamily } from './api/families';
@@ -18,7 +19,10 @@ const FAMILY_VIEWS = ['search', 'viewFamily', 'form', 'import', 'import-form'];
 // only admins get the edit/add/import/user-management actions.
 export default function DirectoryPage({ user, onLoggedOut }) {
   const isAdmin = user.role === 'admin';
-  const [view, setView] = useState('search');
+  const [view, setView] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('view');
+    return requested === 'users' && isAdmin ? 'users' : 'search';
+  });
   const [activeFamily, setActiveFamily] = useState(null);
   const [loadingFamily, setLoadingFamily] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -173,7 +177,12 @@ export default function DirectoryPage({ user, onLoggedOut }) {
 
       {view === 'settings' && isAdmin && <SettingsPage />}
 
-      {view === 'account' && <ChangePasswordForm />}
+      {view === 'account' && (
+        <>
+          {isAdmin && <NotificationSettingsForm user={user} />}
+          <ChangePasswordForm />
+        </>
+      )}
 
       {view === 'search' && !loadingFamily && (
         <FamilySearch
