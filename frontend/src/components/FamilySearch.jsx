@@ -33,14 +33,14 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refre
           onChange={(e) => setQuery(e.target.value)}
         />
         {isAdmin && (
-          <>
+          <div className="family-search-actions">
             <button type="button" className="primary-btn" onClick={onAddNew}>
               + Add a New Family
             </button>
             <button type="button" onClick={onImport}>
               Import from PDF
             </button>
-          </>
+          </div>
         )}
       </div>
 

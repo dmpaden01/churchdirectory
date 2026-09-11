@@ -9,6 +9,7 @@
 
 .admin-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
@@ -21,10 +22,10 @@
 
 .admin-header-right {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-top: 32px;
-  white-space: nowrap;
 }
 
 .admin-current-user {

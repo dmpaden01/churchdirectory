@@ -63,19 +63,29 @@
 
 .user-list-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
 }
 
 .user-list-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .user-list-info {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.user-list-info strong,
+.pending-email {
+  overflow-wrap: anywhere;
 }
 
 .user-list-info strong {

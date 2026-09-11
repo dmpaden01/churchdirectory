@@ -1,17 +1,25 @@
 .family-search-header {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
 }
 
 .family-search-header input {
-  flex: 1;
+  flex: 1 1 200px;
+  min-width: 200px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.95rem;
   background: var(--bg);
   color: var(--text-h);
+}
+
+.family-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .family-search-header button:not(.primary-btn) {
