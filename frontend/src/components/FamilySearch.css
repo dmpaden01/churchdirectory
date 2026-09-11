@@ -44,8 +44,9 @@
 
 .family-results li {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 8px 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -68,6 +69,8 @@
 .family-result-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
   text-align: left;
 }
 
@@ -75,7 +78,19 @@
   color: var(--text-h);
 }
 
-.family-result-location {
+.family-result-children {
   font-size: 0.85rem;
   color: var(--text);
+}
+
+.family-result-review-btn {
+  flex-shrink: 0;
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  background: rgba(217, 119, 6, 0.1);
+  color: #d97706;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
 }

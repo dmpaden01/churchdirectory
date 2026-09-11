@@ -7,7 +7,7 @@ function headOf(family) {
 }
 
 // Search-by-family-name box plus results list, and the "Add new family" entry point.
-export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refreshToken, isAdmin }) {
+export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onReviewFamily, refreshToken, isAdmin }) {
   const [query, setQuery] = useState('');
   const [families, setFamilies] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,6 +53,17 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refre
       <ul className="family-results">
         {families.map((family) => {
           const head = headOf(family);
+          const spouse = family.individuals?.find((i) => i.role === 'spouse');
+          const children = family.individuals?.filter((i) => i.role === 'child') || [];
+          // The family (last) name is already shown in bold above, so it's
+          // redundant here unless the spouse has a different one - in which
+          // case show both full names to make the difference clear.
+          const sameLastName = !spouse || head?.lastName === spouse.lastName;
+          const namesLine = !head
+            ? ''
+            : sameLastName
+              ? `${head.firstName}${spouse ? ` & ${spouse.firstName}` : ''}`
+              : `${head.firstName} ${head.lastName} & ${spouse.firstName} ${spouse.lastName}`;
           return (
             <li key={family._id} onClick={() => onSelectFamily(family._id)}>
               <img
@@ -62,9 +73,22 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, refre
               />
               <div className="family-result-info">
                 <strong>{family.familyName}</strong>
-                <span>{head ? `${head.firstName} ${head.lastName}` : ''}</span>
-                <span className="family-result-location">{family.city}, {family.state}</span>
+                <span>{namesLine}</span>
+                {children.length > 0 && (
+                  <span className="family-result-children">
+                    <em>{children.map((c) => c.firstName).join(', ')}</em>
+                  </span>
+                )}
               </div>
+              {isAdmin && family.needsReview && (
+                <button
+                  type="button"
+                  className="family-result-review-btn"
+                  onClick={(e) => { e.stopPropagation(); onReviewFamily(family._id); }}
+                >
+                  Needs Review
+                </button>
+              )}
             </li>
           );
         })}
