@@ -16,3 +16,6 @@ node_modules/
 
 # Uploaded family/individual photos (runtime data, not source)
 backend/uploads/
+
+# Local database backups - real member data (names, addresses, photos), never committed
+backend/backups/
