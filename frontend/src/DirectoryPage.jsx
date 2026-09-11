@@ -103,44 +103,48 @@ export default function DirectoryPage({ user, onLoggedOut }) {
     <div className="admin-page">
       <header className="admin-header">
         <h1><SiteLogo className="site-logo" />Church Directory</h1>
-        <div className="admin-header-right">
-          <span className="admin-current-user">Signed in as {user.username}</span>
-          <button type="button" onClick={handleLogout}>Sign Out</button>
-        </div>
+        <button type="button" className="admin-header-signout" onClick={handleLogout}>
+          Sign Out
+        </button>
       </header>
 
       <nav className="admin-nav">
-        <button
-          type="button"
-          className={FAMILY_VIEWS.includes(view) ? 'active' : ''}
-          onClick={() => setView('search')}
-        >
-          Families
-        </button>
-        {isAdmin && (
+        <div className="admin-nav-tabs">
           <button
             type="button"
-            className={view === 'users' ? 'active' : ''}
-            onClick={() => setView('users')}
+            className={FAMILY_VIEWS.includes(view) ? 'active' : ''}
+            onClick={() => setView('search')}
           >
-            Users
+            Families
           </button>
-        )}
-        {isAdmin && (
+          {isAdmin && (
+            <button
+              type="button"
+              className={view === 'users' ? 'active' : ''}
+              onClick={() => setView('users')}
+            >
+              Users
+            </button>
+          )}
+          {isAdmin && (
+            <button
+              type="button"
+              className={view === 'settings' ? 'active' : ''}
+              onClick={() => setView('settings')}
+            >
+              Settings
+            </button>
+          )}
           <button
             type="button"
-            className={view === 'settings' ? 'active' : ''}
-            onClick={() => setView('settings')}
+            className={view === 'account' ? 'active' : ''}
+            onClick={() => setView('account')}
           >
-            Settings
+            Account
           </button>
-        )}
-        <button
-          type="button"
-          className={view === 'account' ? 'active' : ''}
-          onClick={() => setView('account')}
-        >
-          Account
+        </div>
+        <button type="button" className="admin-nav-signout" onClick={handleLogout}>
+          Sign Out
         </button>
       </nav>
 

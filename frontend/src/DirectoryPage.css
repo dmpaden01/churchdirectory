@@ -9,48 +9,58 @@
 
 .admin-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 }
 
 .admin-header h1 {
   text-align: left;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 
-.admin-header-right {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  margin-top: 32px;
-}
-
-.admin-current-user {
-  color: var(--text);
-  font-size: 0.9rem;
-}
-
-.admin-header-right button {
+.admin-header-signout {
+  display: none;
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 0.9rem;
+  padding: 6px 12px;
+  font-size: 0.85rem;
   cursor: pointer;
   background: var(--bg);
   color: var(--text-h);
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .admin-header h1 {
+    font-size: 22px;
+  }
+
+  .admin-header-signout {
+    display: block;
+  }
+
+  .admin-nav-signout {
+    display: none;
+  }
 }
 
 .admin-nav {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
 }
 
-.admin-nav button {
+.admin-nav-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-nav-tabs button {
   border: none;
   background: none;
   padding: 10px 4px;
@@ -61,10 +71,20 @@
   border-bottom: 2px solid transparent;
 }
 
-.admin-nav button.active {
+.admin-nav-tabs button.active {
   color: var(--text-h);
   border-bottom-color: var(--accent);
   font-weight: 600;
+}
+
+.admin-nav-signout {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: var(--bg);
+  color: var(--text-h);
 }
 
 .family-search-status {
