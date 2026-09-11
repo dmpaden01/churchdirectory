@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import DirectoryPage from './DirectoryPage';
 import LoginPage from './LoginPage';
 import SetPasswordPage from './SetPasswordPage';
+import Footer from './components/Footer';
 import { getCurrentUser } from './api/auth';
 import { applyDynamicFavicon } from './utils/applyFavicon';
 import './App.css';
@@ -47,17 +48,21 @@ function App() {
     window.history.replaceState({}, '', window.location.pathname);
   };
 
+  let content = null;
   if (setPasswordToken) {
-    return <SetPasswordPage token={setPasswordToken} onDone={clearSetPasswordToken} />;
+    content = <SetPasswordPage token={setPasswordToken} onDone={clearSetPasswordToken} />;
+  } else if (status === 'anonymous') {
+    content = <LoginPage onLoggedIn={handleLoggedIn} />;
+  } else if (status === 'authenticated') {
+    content = <DirectoryPage user={user} onLoggedOut={handleLoggedOut} />;
   }
 
-  if (status === 'loading') return null;
-
-  if (status === 'anonymous') {
-    return <LoginPage onLoggedIn={handleLoggedIn} />;
-  }
-
-  return <DirectoryPage user={user} onLoggedOut={handleLoggedOut} />;
+  return (
+    <>
+      {content}
+      <Footer />
+    </>
+  );
 }
 
 export default App;
