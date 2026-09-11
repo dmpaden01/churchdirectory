@@ -15,33 +15,40 @@
 .family-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 14px;
 }
 
 .form-section {
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 20px;
+  padding: 14px;
 }
 
 .form-section h3 {
-  margin: 0 0 16px;
+  margin: 0 0 10px;
   color: var(--text-h);
   font-size: 1.1rem;
 }
 
-.family-fields-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+.fields-with-photo {
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   align-items: start;
 }
 
+.fields-with-photo > .photo-dropzone-wrapper {
+  flex-shrink: 0;
+}
+
+.family-fields-grid,
 .individual-fields-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
   align-items: start;
+  flex: 1 1 240px;
+  min-width: 0;
 }
 
 .field-group {
@@ -58,7 +65,7 @@
 
 .field-group input,
 .field-group select {
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.9rem;
@@ -69,8 +76,9 @@
 .individual-fieldset {
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  padding: 12px;
+  margin-bottom: 10px;
+  min-width: 0;
 }
 
 .individual-fieldset legend {
@@ -78,7 +86,7 @@
   color: var(--text-h);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 0 6px;
 }
 
@@ -94,7 +102,7 @@
 
 .add-member-buttons {
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 
 .add-member-buttons button {
@@ -113,6 +121,7 @@
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   justify-content: flex-start;
 }

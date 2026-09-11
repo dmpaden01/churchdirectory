@@ -183,7 +183,7 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
 
       <section className="form-section">
         <h3>Family Information</h3>
-        <div className="family-fields-grid">
+        <div className="fields-with-photo">
           <PhotoDropzone
             label="Family Photo (optional)"
             existingUrl={form.removeFamilyPhoto ? null : form.photoPath}
@@ -191,39 +191,41 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
             onRemove={() => setForm((prev) => ({ ...prev, photoFile: undefined, removeFamilyPhoto: true }))}
           />
 
-          <div className="field-group">
-            <label>Address *</label>
-            <input type="text" value={form.address} onChange={setField('address')} required />
-          </div>
+          <div className="family-fields-grid">
+            <div className="field-group">
+              <label>Address *</label>
+              <input type="text" value={form.address} onChange={setField('address')} required />
+            </div>
 
-          <div className="field-group">
-            <label>Suite / Apt. Number</label>
-            <input type="text" value={form.aptSuite} onChange={setField('aptSuite')} />
-          </div>
+            <div className="field-group">
+              <label>Suite / Apt. Number</label>
+              <input type="text" value={form.aptSuite} onChange={setField('aptSuite')} />
+            </div>
 
-          <div className="field-group">
-            <label>City *</label>
-            <input type="text" value={form.city} onChange={setField('city')} required />
-          </div>
+            <div className="field-group">
+              <label>City *</label>
+              <input type="text" value={form.city} onChange={setField('city')} required />
+            </div>
 
-          <div className="field-group">
-            <label>State *</label>
-            <input type="text" value={form.state} onChange={setField('state')} required />
-          </div>
+            <div className="field-group">
+              <label>State *</label>
+              <input type="text" value={form.state} onChange={setField('state')} required />
+            </div>
 
-          <div className="field-group">
-            <label>Zip Code *</label>
-            <input type="text" value={form.zipCode} onChange={setField('zipCode')} required />
-          </div>
+            <div className="field-group">
+              <label>Zip Code *</label>
+              <input type="text" value={form.zipCode} onChange={setField('zipCode')} required />
+            </div>
 
-          <div className="field-group">
-            <label>Home Phone Number</label>
-            <input type="tel" value={form.homePhone} onChange={setField('homePhone')} />
-          </div>
+            <div className="field-group">
+              <label>Home Phone Number</label>
+              <input type="tel" value={form.homePhone} onChange={setField('homePhone')} />
+            </div>
 
-          <div className="field-group">
-            <label>Anniversary</label>
-            <input type="date" value={form.anniversary} onChange={setField('anniversary')} />
+            <div className="field-group">
+              <label>Anniversary</label>
+              <input type="date" value={form.anniversary} onChange={setField('anniversary')} />
+            </div>
           </div>
         </div>
       </section>

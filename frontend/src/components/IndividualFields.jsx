@@ -32,7 +32,7 @@ export default function IndividualFields({
         )}
       </legend>
 
-      <div className="individual-fields-grid">
+      <div className="fields-with-photo">
         <PhotoDropzone
           label="Photo (optional)"
           existingUrl={existingPhotoUrl}
@@ -40,39 +40,41 @@ export default function IndividualFields({
           onRemove={() => onChange(index, { ...individual, _photoFile: undefined, removePhoto: true })}
         />
 
-        <div className="field-group">
-          <label>First Name *</label>
-          <input type="text" value={individual.firstName || ''} onChange={set('firstName')} required />
-        </div>
+        <div className="individual-fields-grid">
+          <div className="field-group">
+            <label>First Name *</label>
+            <input type="text" value={individual.firstName || ''} onChange={set('firstName')} required />
+          </div>
 
-        <div className="field-group">
-          <label>Last Name *</label>
-          <input type="text" value={individual.lastName || ''} onChange={set('lastName')} required />
-        </div>
+          <div className="field-group">
+            <label>Last Name *</label>
+            <input type="text" value={individual.lastName || ''} onChange={set('lastName')} required />
+          </div>
 
-        <div className="field-group">
-          <label>Gender *</label>
-          <select value={individual.gender || ''} onChange={set('gender')} required>
-            <option value="" disabled>Select...</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
+          <div className="field-group">
+            <label>Gender *</label>
+            <select value={individual.gender || ''} onChange={set('gender')} required>
+              <option value="" disabled>Select...</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-        <div className="field-group">
-          <label>Cell Phone Number</label>
-          <input type="tel" value={individual.cellPhone || ''} onChange={set('cellPhone')} />
-        </div>
+          <div className="field-group">
+            <label>Cell Phone Number</label>
+            <input type="tel" value={individual.cellPhone || ''} onChange={set('cellPhone')} />
+          </div>
 
-        <div className="field-group">
-          <label>Email</label>
-          <input type="email" value={individual.email || ''} onChange={set('email')} />
-        </div>
+          <div className="field-group">
+            <label>Email</label>
+            <input type="email" value={individual.email || ''} onChange={set('email')} />
+          </div>
 
-        <div className="field-group">
-          <label>Birthday</label>
-          <input type="date" value={individual.birthday || ''} onChange={set('birthday')} />
+          <div className="field-group">
+            <label>Birthday</label>
+            <input type="date" value={individual.birthday || ''} onChange={set('birthday')} />
+          </div>
         </div>
       </div>
     </fieldset>
