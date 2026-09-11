@@ -42,7 +42,7 @@ export default function LoginPage({ onLoggedIn }) {
         {error && <div className="form-error">{error}</div>}
 
         <div className="field-group">
-          <label>Username</label>
+          <label>Email</label>
           <input
             type="text"
             value={username}
