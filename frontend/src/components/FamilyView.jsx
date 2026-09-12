@@ -135,7 +135,7 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCo
             type="text"
             value={flagNote}
             onChange={(e) => setFlagNote(e.target.value)}
-            placeholder="e.g. Told me their address changed, don't have the new one yet"
+            placeholder="e.g. They are moving"
             autoFocus
           />
           <div className="flag-review-form-actions">
