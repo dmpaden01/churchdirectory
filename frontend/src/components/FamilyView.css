@@ -138,8 +138,11 @@
 }
 
 .family-card-photo {
-  width: 130px;
-  height: 130px;
+  /* Same 3:2 ratio as the edit form's PhotoDropzone (see PhotoDropzone.css) -
+     most source photos are this ratio, so this displays them uncropped
+     instead of the square box force-cropping a third of their width. */
+  width: 180px;
+  height: 120px;
   border-radius: 10px;
   object-fit: cover;
   background: var(--code-bg);
