@@ -104,8 +104,7 @@ function splitName(rawName, forcedLastName) {
     lastName = tokens.slice(1).join(' ');
   }
   if (nickname) firstName = `${firstName} ${nickname}`.trim();
-  if (suffix) lastName = lastName ? `${lastName}, ${suffix}` : suffix;
-  return { firstName, lastName };
+  return { firstName, lastName, suffix };
 }
 
 function parseFamilyBlock(lines) {
@@ -161,7 +160,7 @@ function parseFamilyBlock(lines) {
     const annivMatch = text.match(/ANNIVERSARY\s+(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/);
 
     const namePart = text.split(/BIRTHDAY|CELL|EMAIL|ANNIVERSARY/)[0].trim();
-    const { firstName, lastName } = splitName(namePart, index === 0 ? familyLastName : undefined);
+    const { firstName, lastName, suffix } = splitName(namePart, index === 0 ? familyLastName : undefined);
     const displayName = `${firstName} ${lastName}`.trim() || `Person ${index + 1}`;
 
     if (annivMatch && !anniversary) {
@@ -177,6 +176,7 @@ function parseFamilyBlock(lines) {
       role,
       firstName: firstName || `Person ${index + 1}`,
       lastName: lastName || familyLastName,
+      suffix: suffix || '',
       roleStatus: deceased ? 'Deceased' : '',
       cellPhone: cellMatch ? cellMatch[1] : '',
       email: emailMatch ? emailMatch[1].replace(/[.,]$/, '') : '',
@@ -185,7 +185,7 @@ function parseFamilyBlock(lines) {
   });
 
   if (individuals.length === 0) {
-    individuals.push({ role: 'head', firstName: '', lastName: familyLastName, cellPhone: '', email: '', birthday: '' });
+    individuals.push({ role: 'head', firstName: '', lastName: familyLastName, suffix: '', cellPhone: '', email: '', birthday: '' });
     notes.push('No family member details were found in the source for this entry.');
   }
 
@@ -293,7 +293,7 @@ export function stripInternalFields(families) {
 }
 
 const FAMILY_COMPARE_FIELDS = ['address', 'aptSuite', 'city', 'state', 'zipCode', 'homePhone', 'anniversary'];
-const INDIVIDUAL_COMPARE_FIELDS = ['firstName', 'lastName', 'roleStatus', 'cellPhone', 'email', 'birthday'];
+const INDIVIDUAL_COMPARE_FIELDS = ['firstName', 'lastName', 'suffix', 'roleStatus', 'cellPhone', 'email', 'birthday'];
 
 function normalizeForCompare(value) {
   return (value || '').toString().trim().toLowerCase();

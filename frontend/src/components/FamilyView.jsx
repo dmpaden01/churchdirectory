@@ -26,8 +26,8 @@ function MemberLine({ individual, changedFields }) {
 
   return (
     <p className="family-member-line">
-      <strong className={changedCls(changedFields?.firstName || changedFields?.lastName)}>
-        {individual.firstName} {individual.lastName}
+      <strong className={changedCls(changedFields?.firstName || changedFields?.lastName || changedFields?.suffix)}>
+        {individual.firstName} {individual.lastName}{individual.suffix ? ` ${individual.suffix}` : ''}
       </strong>
       {ROLE_LABELS[individual.role] && (
         <span className="member-role-tag">{ROLE_LABELS[individual.role]}</span>

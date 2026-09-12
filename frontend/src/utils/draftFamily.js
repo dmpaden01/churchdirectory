@@ -19,6 +19,7 @@ export function draftIndividualToFormState(ind) {
     role: ind.role,
     firstName: ind.firstName || '',
     lastName: ind.lastName || '',
+    suffix: ind.suffix || '',
     roleStatus: ind.roleStatus || '',
     cellPhone: ind.cellPhone || '',
     email: ind.email || '',
@@ -44,7 +45,7 @@ export function draftToFormState(draft, { needsReview = false } = {}) {
 }
 
 const FAMILY_COMPARE_FIELDS = ['address', 'aptSuite', 'city', 'state', 'zipCode', 'homePhone', 'anniversary'];
-const INDIVIDUAL_COMPARE_FIELDS = ['firstName', 'lastName', 'roleStatus', 'cellPhone', 'email', 'birthday'];
+const INDIVIDUAL_COMPARE_FIELDS = ['firstName', 'lastName', 'suffix', 'roleStatus', 'cellPhone', 'email', 'birthday'];
 
 function normalizeForCompare(value) {
   return (value || '').toString().trim().toLowerCase();

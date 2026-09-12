@@ -6,6 +6,20 @@ function headOf(family) {
   return family.individuals?.[0];
 }
 
+// First name with suffix (e.g. "Thomas Sr."), for display wherever the last
+// name is omitted as redundant.
+function firstNameWithSuffix(individual) {
+  return individual.suffix ? `${individual.firstName} ${individual.suffix}` : individual.firstName;
+}
+
+// Full name with suffix (e.g. "Thomas Jordan Sr."), for display when the last
+// name needs to be shown.
+function fullNameWithSuffix(individual) {
+  return individual.suffix
+    ? `${individual.firstName} ${individual.lastName} ${individual.suffix}`
+    : `${individual.firstName} ${individual.lastName}`;
+}
+
 // Search-by-family-name box plus results list, and the "Add new family" entry point.
 export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onReviewFamily, refreshToken, isAdmin }) {
   const [query, setQuery] = useState('');
@@ -62,8 +76,8 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onRev
           const namesLine = !head
             ? ''
             : sameLastName
-              ? `${head.firstName}${spouse ? ` & ${spouse.firstName}` : ''}`
-              : `${head.firstName} ${head.lastName} & ${spouse.firstName} ${spouse.lastName}`;
+              ? `${firstNameWithSuffix(head)}${spouse ? ` & ${firstNameWithSuffix(spouse)}` : ''}`
+              : `${fullNameWithSuffix(head)} & ${fullNameWithSuffix(spouse)}`;
           return (
             <li key={family._id} onClick={() => onSelectFamily(family._id)}>
               <img
@@ -76,7 +90,7 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onRev
                 <span>{namesLine}</span>
                 {children.length > 0 && (
                   <span className="family-result-children">
-                    <em>{children.map((c) => c.firstName).join(', ')}</em>
+                    <em>{children.map(firstNameWithSuffix).join(', ')}</em>
                   </span>
                 )}
               </div>

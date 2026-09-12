@@ -20,6 +20,9 @@ const individualSchema = new Schema({
   },
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
+  // e.g. "Jr.", "Sr.", "III" - kept separate from lastName so the family list
+  // and other displays can place it after the first name instead.
+  suffix: { type: String, trim: true },
   roleStatus: { type: String, trim: true },
   cellPhone: { type: String, trim: true },
   email: { type: String, trim: true },

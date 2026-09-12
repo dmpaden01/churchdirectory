@@ -63,6 +63,7 @@ async function buildIndividuals(rawIndividuals, existingIndividuals, files) {
       role: raw.role,
       firstName: raw.firstName,
       lastName: raw.lastName,
+      suffix: raw.suffix || undefined,
       roleStatus: raw.roleStatus || undefined,
       cellPhone: raw.cellPhone || undefined,
       email: raw.email || undefined,

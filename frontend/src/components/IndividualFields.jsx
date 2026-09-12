@@ -7,8 +7,8 @@ const ROLE_LABELS = {
 };
 
 // One individual's editable fields within the family form.
-// `changedFields` (optional): { firstName, lastName, roleStatus, cellPhone,
-// email, birthday } booleans - which fields a PDF-import draft would change
+// `changedFields` (optional): { firstName, lastName, suffix, roleStatus,
+// cellPhone, email, birthday } booleans - which fields a PDF-import draft would change
 // from what's already saved, for highlighting during review.
 export default function IndividualFields({
   individual,
@@ -55,6 +55,16 @@ export default function IndividualFields({
           <div className={fieldGroupClass('lastName')}>
             <label>Last Name *</label>
             <input type="text" value={individual.lastName || ''} onChange={set('lastName')} required />
+          </div>
+
+          <div className={fieldGroupClass('suffix')}>
+            <label>Suffix</label>
+            <input
+              type="text"
+              placeholder="Jr., Sr., III..."
+              value={individual.suffix || ''}
+              onChange={set('suffix')}
+            />
           </div>
 
           <div className={fieldGroupClass('roleStatus')}>

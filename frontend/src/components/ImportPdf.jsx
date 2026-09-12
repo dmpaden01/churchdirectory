@@ -102,8 +102,8 @@ export default function ImportPdf({ parsedFamilies, totalCount, onParsed, onRevi
                   <div className="import-result-info">
                     <strong>{head.lastName} Family</strong>
                     <span>
-                      {head.firstName} {head.lastName}
-                      {spouse ? ` & ${spouse.firstName}` : ''}
+                      {head.firstName} {head.lastName}{head.suffix ? ` ${head.suffix}` : ''}
+                      {spouse ? ` & ${spouse.firstName}${spouse.suffix ? ` ${spouse.suffix}` : ''}` : ''}
                       {childCount > 0 ? ` (+${childCount} child${childCount > 1 ? 'ren' : ''})` : ''}
                     </span>
                     <span className="import-result-location">
