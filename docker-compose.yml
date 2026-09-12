@@ -38,6 +38,7 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL}
       FRONTEND_PUBLIC_URL: ${FRONTEND_PUBLIC_URL}
+      WALL_API_KEY: ${WALL_API_KEY}
       # Family/individual/logo/favicon photos live on this volume instead of
       # in Mongo - see backend/utils/photoStorage.js.
       PHOTOS_DIR: /app/data/photos
