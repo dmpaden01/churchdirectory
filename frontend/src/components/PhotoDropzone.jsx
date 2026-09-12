@@ -7,7 +7,9 @@ const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
 // existingUrl: server-relative path of a previously saved photo, if any
 // onChange(file): called with a new File when the user picks/drops one
 // onRemove(): called when the user clears the current photo
-export default function PhotoDropzone({ label, existingUrl, onChange, onRemove }) {
+// changed (optional): highlights this field the same way other import-review
+// diffs are shown elsewhere in the form (see .field-group.field-changed).
+export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, changed }) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(existingUrl || null);
   const objectUrlRef = useRef(null);
@@ -56,9 +58,9 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove }
 
   return (
     <div className="photo-dropzone-wrapper">
-      {label && <label className="photo-dropzone-label">{label}</label>}
+      {label && <label className={`photo-dropzone-label${changed ? ' changed' : ''}`}>{label}</label>}
       <div
-        className={`photo-dropzone${isDragging ? ' dragging' : ''}${previewUrl ? ' has-photo' : ''}`}
+        className={`photo-dropzone${isDragging ? ' dragging' : ''}${previewUrl ? ' has-photo' : ''}${changed ? ' changed' : ''}`}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}

@@ -10,6 +10,25 @@
   color: #374151;
 }
 
+/* Flags the photo as one a PDF-import draft would change, matching
+   .field-group.field-changed elsewhere in the form. */
+.photo-dropzone-label.changed {
+  color: #d97706;
+}
+
+.photo-dropzone-label.changed::after {
+  content: 'Changed';
+  margin-left: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.12);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
 .photo-dropzone {
   position: relative;
   width: 180px;
@@ -36,6 +55,11 @@
 
 .photo-dropzone.has-photo {
   border-style: solid;
+}
+
+.photo-dropzone.changed {
+  border-color: #d97706;
+  background: rgba(217, 119, 6, 0.07);
 }
 
 .photo-dropzone-placeholder {

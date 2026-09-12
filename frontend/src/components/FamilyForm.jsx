@@ -190,6 +190,7 @@ export default function FamilyForm({ family, draft, onSaved, onDeleted, onCancel
             existingUrl={form.removeFamilyPhoto ? null : form.photoPath}
             onChange={(file) => setForm((prev) => ({ ...prev, photoFile: file, removeFamilyPhoto: false }))}
             onRemove={() => setForm((prev) => ({ ...prev, photoFile: undefined, removeFamilyPhoto: true }))}
+            changed={Boolean(changedFields?.photo)}
           />
 
           <div className="family-fields-grid">
