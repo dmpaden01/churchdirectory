@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import familiesRouter from './routes/families.js';
+import wallRouter from './routes/wall.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import settingsRouter from './routes/settings.js';
@@ -40,6 +41,9 @@ app.use('/api/settings', settingsRouter);
 // Read access (search/view/photos) is open to any signed-in user; write routes
 // (create/update/delete/import) enforce admin themselves within familiesRouter.
 app.use('/api/families', requireAuth, familiesRouter);
+// Public read-only wall kiosk display - gated by a shared key (see
+// middleware/auth.js requireWallKey) instead of a signed-in user.
+app.use('/api/wall', wallRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

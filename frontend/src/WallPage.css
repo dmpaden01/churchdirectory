@@ -1,0 +1,109 @@
+/* Escapes the app shell's #root sizing (fixed width, centered, bordered -
+   see index.css) so the kiosk display fills the actual browser window. */
+.wall-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  /* No one can scroll this display, so WallPage.jsx paginates instead of
+     letting the grid grow past the window - this is a hard backstop. */
+  overflow: hidden;
+  background: var(--bg);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.wall-page-denied {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: var(--text-h);
+}
+
+.wall-header {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.wall-header h1 {
+  margin: 0;
+}
+
+/* Takes up whatever height the header (above) doesn't use - measureGrid in
+   WallPage.jsx reads this element's clientHeight to work out how many rows
+   fit, so the header is automatically accounted for. */
+.wall-content {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+}
+
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 32px;
+  /* Fills the full height of .wall-content so alignContent (set inline, see
+     WallPage.jsx) has leftover space to distribute between rows instead of
+     leaving it unused below the last row. */
+  height: 100%;
+  transition: opacity 1s ease;
+  opacity: 1;
+}
+
+.wall-grid.wall-fade-out {
+  opacity: 0;
+}
+
+/* Off-screen copy of every family, used only to measure how many
+   columns/rows actually fit at the current window size (see measureGrid in
+   WallPage.jsx) - never shown, so it doesn't fade or paginate. */
+.wall-grid-measure {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: none;
+}
+
+.wall-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.wall-cell-photo {
+  width: 100%;
+  /* Matches the real photo library's dimensions (432x288, the large majority
+     of files in backend/data/photos) so cells don't crop faces via
+     object-fit: cover to force a square. */
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--code-bg);
+}
+
+.wall-cell-name {
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  color: var(--text-h);
+}
+
+.wall-cell-adults {
+  font-size: 1.35rem;
+  color: var(--text-h);
+}
+
+.wall-cell-children {
+  font-style: italic;
+  font-size: 1.2rem;
+  color: var(--text);
+}

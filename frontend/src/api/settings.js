@@ -40,3 +40,25 @@ export async function resetLogo() {
     throw new Error(err.error || 'Failed to reset the site logo');
   }
 }
+
+// Shown at the top of the /wall kiosk display in place of the default
+// "Church Directory" title when set (see WallPage.jsx). `null` means unset.
+export async function getChurchName() {
+  const res = await fetch(`${BASE_URL}/church-name`);
+  if (!res.ok) throw new Error('Failed to load the church name');
+  const { churchName } = await res.json();
+  return churchName;
+}
+
+export async function updateChurchName(churchName) {
+  const res = await fetch(`${BASE_URL}/church-name`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ churchName }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update the church name');
+  }
+  return (await res.json()).churchName;
+}

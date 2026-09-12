@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import PhotoDropzone from './components/PhotoDropzone';
-import { logoUrl, hasCustomLogo, uploadLogo, resetLogo } from './api/settings';
+import { logoUrl, hasCustomLogo, uploadLogo, resetLogo, getChurchName, updateChurchName } from './api/settings';
 import { applyDynamicFavicon } from './utils/applyFavicon';
 import './SettingsPage.css';
 
-// Admin-only: site-wide settings. Currently just the site logo, stored in
-// MongoDB (like family/individual photos). Uploading it also auto-generates
-// and stores a 50x50 favicon derived from it, served via /api/settings/favicon.
+// Admin-only: site-wide settings, stored in MongoDB. Uploading a logo also
+// auto-generates and stores a 50x50 favicon derived from it, served via
+// /api/settings/favicon.
 export default function SettingsPage() {
   const [hasCustom, setHasCustom] = useState(null); // null = still checking
   const [error, setError] = useState(null);
@@ -14,9 +14,36 @@ export default function SettingsPage() {
   const [resetKey, setResetKey] = useState(0);
   const [cacheBust, setCacheBust] = useState(0);
 
+  // null = still loading; '' means unset (the wall display falls back to
+  // "Church Directory" - see WallPage.jsx). Doesn't affect the main site.
+  const [churchName, setChurchName] = useState(null);
+  const [churchNameSaving, setChurchNameSaving] = useState(false);
+  const [churchNameError, setChurchNameError] = useState(null);
+  const [churchNameSaved, setChurchNameSaved] = useState(false);
+
   useEffect(() => {
     hasCustomLogo().then(setHasCustom);
   }, []);
+
+  useEffect(() => {
+    getChurchName().then((name) => setChurchName(name || ''));
+  }, []);
+
+  const handleChurchNameSave = async (e) => {
+    e.preventDefault();
+    setChurchNameSaving(true);
+    setChurchNameError(null);
+    setChurchNameSaved(false);
+    try {
+      const saved = await updateChurchName(churchName);
+      setChurchName(saved || '');
+      setChurchNameSaved(true);
+    } catch (err) {
+      setChurchNameError(err.message);
+    } finally {
+      setChurchNameSaving(false);
+    }
+  };
 
   const handleChange = async (file) => {
     setSaving(true);
@@ -70,6 +97,37 @@ export default function SettingsPage() {
           />
         )}
         {saving && <p className="family-search-status">Saving...</p>}
+      </section>
+
+      <section className="form-section">
+        <h3>Wall Title/Header</h3>
+        <p className="settings-hint">
+          Shown at the top of the wall display (/wall) in place of the default &quot;Church
+          Directory&quot; title. Leave blank to use the default. Doesn&apos;t affect the main site.
+        </p>
+        {churchNameError && <div className="form-error">{churchNameError}</div>}
+        {churchName !== null && (
+          <form className="field-group" onSubmit={handleChurchNameSave}>
+            <label htmlFor="church-name">Wall Title/Header</label>
+            <input
+              id="church-name"
+              type="text"
+              value={churchName}
+              onChange={(e) => {
+                setChurchName(e.target.value);
+                setChurchNameSaved(false);
+              }}
+              placeholder="Church Directory"
+              disabled={churchNameSaving}
+            />
+            <div className="form-actions">
+              <button type="submit" className="primary-btn" disabled={churchNameSaving}>
+                {churchNameSaving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+            {churchNameSaved && <p className="family-search-status">Saved.</p>}
+          </form>
+        )}
       </section>
     </div>
   );

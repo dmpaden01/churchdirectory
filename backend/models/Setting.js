@@ -16,11 +16,14 @@ const photoSchema = new Schema(
 // fixed "singleton" _id below.
 // - logo: the original full-size image an admin uploads.
 // - favicon: a 50x50 version auto-generated from it for the browser tab icon.
+// - churchName: shown at the top of the wall display in place of the default
+//   "Church Directory" title when set.
 const settingSchema = new Schema(
   {
     _id: { type: String },
     logo: { type: photoSchema },
     favicon: { type: photoSchema },
+    churchName: { type: String, trim: true },
   },
   { timestamps: true },
 );

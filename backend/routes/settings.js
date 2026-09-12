@@ -80,4 +80,30 @@ router.delete('/logo', requireAuth, requireRole('admin'), async (req, res) => {
   }
 });
 
+// GET /api/settings/church-name - public: read by the /wall kiosk display
+// (which has no signed-in user) to show in place of the default title.
+router.get('/church-name', async (req, res) => {
+  try {
+    const settings = await Setting.findById(SINGLETON_ID).select('churchName');
+    res.json({ churchName: settings?.churchName || null });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT /api/settings/church-name (admin only) - blank clears it back to unset.
+router.put('/church-name', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const churchName = typeof req.body.churchName === 'string' ? req.body.churchName.trim() : '';
+    if (churchName) {
+      await Setting.findByIdAndUpdate(SINGLETON_ID, { _id: SINGLETON_ID, churchName }, { upsert: true });
+    } else {
+      await Setting.findByIdAndUpdate(SINGLETON_ID, { $unset: { churchName: '' } });
+    }
+    res.json({ churchName: churchName || null });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 export default router;
