@@ -65,6 +65,7 @@
   font: inherit;
   background: var(--bg);
   color: var(--text-h);
+  box-sizing: border-box;
 }
 
 .flag-review-form-actions {
