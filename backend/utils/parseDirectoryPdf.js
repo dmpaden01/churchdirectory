@@ -4,7 +4,9 @@
 // family records for a human to review and complete in the admin UI rather
 // than records that get saved directly.
 
+import fs from 'fs';
 import { normalizeMonthDayYear } from './monthDayYear.js';
+import { photoAbsolutePath } from './photoStorage.js';
 
 const NOISE_LINE_PATTERNS = [
   /^Church Directory$/,
@@ -301,11 +303,13 @@ function fieldsDiffer(a, b) {
   return normalizeForCompare(a) !== normalizeForCompare(b);
 }
 
-function toBuffer(data) {
-  if (!data) return null;
-  if (Buffer.isBuffer(data)) return data;
-  if (data.buffer) return Buffer.from(data.buffer);
-  return Buffer.from(data);
+function readExistingPhoto(filename) {
+  if (!filename) return null;
+  try {
+    return fs.readFileSync(photoAbsolutePath(filename));
+  } catch {
+    return null;
+  }
 }
 
 function photoDataUrlToBuffer(dataUrl) {
@@ -329,7 +333,7 @@ export function isDraftIdenticalToFamily(draft, family) {
   if (!individualsMatch) return false;
 
   if (draft.photoDataUrl) {
-    const existingPhoto = toBuffer(family.photo?.data);
+    const existingPhoto = readExistingPhoto(family.photo?.filename);
     if (!existingPhoto || !photoDataUrlToBuffer(draft.photoDataUrl).equals(existingPhoto)) return false;
   }
 

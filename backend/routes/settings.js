@@ -3,16 +3,19 @@ import Setting from '../models/Setting.js';
 import upload from '../middleware/upload.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { generateFaviconBuffer } from '../utils/generateFavicon.js';
+import { savePhoto, deletePhoto, photoAbsolutePath } from '../utils/photoStorage.js';
 
 const router = express.Router();
 
 const SINGLETON_ID = 'singleton';
 
 function servePhoto(photo, res) {
-  if (!photo?.data) return res.status(404).end();
+  if (!photo?.filename) return res.status(404).end();
   res.set('Content-Type', photo.contentType);
   res.set('Cache-Control', 'no-cache');
-  res.send(photo.data);
+  res.sendFile(photoAbsolutePath(photo.filename), (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
 }
 
 // GET /api/settings/logo - the original full-size uploaded image (public: not
@@ -42,16 +45,24 @@ router.get('/favicon', async (req, res) => {
 router.put('/logo', requireAuth, requireRole('admin'), upload.single('logo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No image file was provided.' });
-    const favicon = await generateFaviconBuffer(req.file.buffer);
+
+    const previous = await Setting.findById(SINGLETON_ID).select('logo favicon');
+    const faviconBuffer = await generateFaviconBuffer(req.file.buffer);
+
+    const logoFilename = await savePhoto(req.file.buffer, req.file.mimetype);
+    const faviconFilename = await savePhoto(faviconBuffer.data, faviconBuffer.contentType);
+
     await Setting.findByIdAndUpdate(
       SINGLETON_ID,
       {
         _id: SINGLETON_ID,
-        logo: { data: req.file.buffer, contentType: req.file.mimetype },
-        favicon,
+        logo: { filename: logoFilename, contentType: req.file.mimetype },
+        favicon: { filename: faviconFilename, contentType: faviconBuffer.contentType },
       },
       { upsert: true },
     );
+
+    await Promise.all([deletePhoto(previous?.logo?.filename), deletePhoto(previous?.favicon?.filename)]);
     res.status(204).end();
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -61,7 +72,8 @@ router.put('/logo', requireAuth, requireRole('admin'), upload.single('logo'), as
 // DELETE /api/settings/logo - revert to the built-in default (admin only)
 router.delete('/logo', requireAuth, requireRole('admin'), async (req, res) => {
   try {
-    await Setting.findByIdAndUpdate(SINGLETON_ID, { $unset: { logo: '', favicon: '' } });
+    const previous = await Setting.findByIdAndUpdate(SINGLETON_ID, { $unset: { logo: '', favicon: '' } });
+    await Promise.all([deletePhoto(previous?.logo?.filename), deletePhoto(previous?.favicon?.filename)]);
     res.status(204).end();
   } catch (err) {
     res.status(400).json({ error: err.message });

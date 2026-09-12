@@ -2,9 +2,11 @@ import mongoose from 'mongoose';
 
 const { Schema } = mongoose;
 
+// Photos live on disk (see utils/photoStorage.js) - only the generated
+// filename and content type are stored on the document.
 const photoSchema = new Schema(
   {
-    data: { type: Buffer, required: true },
+    filename: { type: String, required: true },
     contentType: { type: String, required: true },
   },
   { _id: false },

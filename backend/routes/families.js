@@ -4,6 +4,7 @@ import Family from '../models/Family.js';
 import upload from '../middleware/upload.js';
 import uploadPdf from '../middleware/uploadPdf.js';
 import { requireRole } from '../middleware/auth.js';
+import { savePhoto, deletePhoto, photoAbsolutePath } from '../utils/photoStorage.js';
 import {
   parseDirectoryPdf,
   flagExistingMatches,
@@ -18,21 +19,36 @@ import { normalizeBirthday } from '../utils/birthday.js';
 
 const router = express.Router();
 
-// Fields excluded everywhere except the dedicated photo-serving routes below,
-// so listing/editing a family never pulls raw image bytes through the JSON API.
-const EXCLUDE_PHOTO_DATA = '-photo.data -individuals.photo.data';
-
 function findFile(files, fieldname) {
   return files.find((f) => f.fieldname === fieldname);
 }
 
-function toPhoto(file) {
-  return file ? { data: file.buffer, contentType: file.mimetype } : undefined;
+async function toPhoto(file) {
+  if (!file) return undefined;
+  const filename = await savePhoto(file.buffer, file.mimetype);
+  return { filename, contentType: file.mimetype };
+}
+
+// Every photo filename currently referenced by a family document (its own
+// plus each individual's), used to work out which files on disk are no
+// longer referenced after a save and can be deleted.
+function collectPhotoFilenames(family) {
+  const filenames = [];
+  if (family?.photo?.filename) filenames.push(family.photo.filename);
+  (family?.individuals || []).forEach((ind) => {
+    if (ind?.photo?.filename) filenames.push(ind.photo.filename);
+  });
+  return filenames;
+}
+
+async function deleteUnreferencedPhotos(beforeFilenames, afterFilenames) {
+  const kept = new Set(afterFilenames);
+  await Promise.all(beforeFilenames.filter((f) => !kept.has(f)).map(deletePhoto));
 }
 
 // Build the individuals array for save, handling new/removed/kept photos.
-function buildIndividuals(rawIndividuals, existingIndividuals, files) {
-  return rawIndividuals.map((raw, index) => {
+async function buildIndividuals(rawIndividuals, existingIndividuals, files) {
+  return Promise.all(rawIndividuals.map(async (raw, index) => {
     const existing = existingIndividuals?.[index];
     let photo = existing?.photo || undefined;
 
@@ -40,7 +56,7 @@ function buildIndividuals(rawIndividuals, existingIndividuals, files) {
 
     if (raw._photoField) {
       const file = findFile(files, raw._photoField);
-      if (file) photo = toPhoto(file);
+      if (file) photo = await toPhoto(file);
     }
 
     return {
@@ -53,7 +69,7 @@ function buildIndividuals(rawIndividuals, existingIndividuals, files) {
       birthday: normalizeBirthday(raw.birthday),
       photo,
     };
-  });
+  }));
 }
 
 // Pulls the import-review notes/highlights out of a save payload, if the
@@ -81,7 +97,7 @@ router.get('/', async (req, res) => {
       : {};
     const families = await Family.find(filter)
       .sort({ familyName: 1 })
-      .select(`${EXCLUDE_PHOTO_DATA} -address -aptSuite -zipCode -homePhone -anniversary`)
+      .select('-address -aptSuite -zipCode -homePhone -anniversary')
       .lean();
     res.json(families);
   } catch (err) {
@@ -147,10 +163,12 @@ router.post('/parse-pdf', requireRole('admin'), uploadPdf.single('pdf'), async (
 router.get('/:id/photo', async (req, res) => {
   try {
     const family = await Family.findById(req.params.id).select('photo');
-    if (!family?.photo?.data) return res.status(404).end();
+    if (!family?.photo?.filename) return res.status(404).end();
     res.set('Content-Type', family.photo.contentType);
     res.set('Cache-Control', 'private, max-age=3600');
-    res.send(family.photo.data);
+    res.sendFile(photoAbsolutePath(family.photo.filename), (err) => {
+      if (err && !res.headersSent) res.status(404).end();
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -161,10 +179,12 @@ router.get('/:id/individuals/:index/photo', async (req, res) => {
   try {
     const family = await Family.findById(req.params.id).select('individuals');
     const individual = family?.individuals?.[req.params.index];
-    if (!individual?.photo?.data) return res.status(404).end();
+    if (!individual?.photo?.filename) return res.status(404).end();
     res.set('Content-Type', individual.photo.contentType);
     res.set('Cache-Control', 'private, max-age=3600');
-    res.send(individual.photo.data);
+    res.sendFile(photoAbsolutePath(individual.photo.filename), (err) => {
+      if (err && !res.headersSent) res.status(404).end();
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -173,7 +193,7 @@ router.get('/:id/individuals/:index/photo', async (req, res) => {
 // GET /api/families/:id - full family record
 router.get('/:id', async (req, res) => {
   try {
-    const family = await Family.findById(req.params.id).select(EXCLUDE_PHOTO_DATA);
+    const family = await Family.findById(req.params.id);
     if (!family) return res.status(404).json({ error: 'Family not found' });
     res.json(family);
   } catch (err) {
@@ -191,7 +211,7 @@ router.patch('/:id/complete-review', requireRole('admin'), async (req, res) => {
       req.params.id,
       { $set: { needsReview: false }, $unset: { reviewNotes: '', reviewChangedFields: '' } },
       { new: true },
-    ).select(EXCLUDE_PHOTO_DATA);
+    );
     if (!family) return res.status(404).json({ error: 'Family not found' });
     res.json(family);
   } catch (err) {
@@ -205,7 +225,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
     const payload = JSON.parse(req.body.data || '{}');
     const files = req.files || [];
 
-    const individuals = buildIndividuals(payload.individuals || [], [], files);
+    const individuals = await buildIndividuals(payload.individuals || [], [], files);
     if (individuals.length === 0 || individuals[0].role !== 'head') {
       return res.status(400).json({ error: 'A head of household is required.' });
     }
@@ -213,7 +233,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
     let photo;
     if (payload._photoField) {
       const file = findFile(files, payload._photoField);
-      if (file) photo = toPhoto(file);
+      if (file) photo = await toPhoto(file);
     }
 
     const family = new Family({
@@ -232,8 +252,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
     });
 
     await family.save();
-    const saved = await Family.findById(family._id).select(EXCLUDE_PHOTO_DATA);
-    res.status(201).json(saved);
+    res.status(201).json(family);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -245,10 +264,12 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
     const existing = await Family.findById(req.params.id);
     if (!existing) return res.status(404).json({ error: 'Family not found' });
 
+    const beforePhotos = collectPhotoFilenames(existing);
+
     const payload = JSON.parse(req.body.data || '{}');
     const files = req.files || [];
 
-    const individuals = buildIndividuals(payload.individuals || [], existing.individuals, files);
+    const individuals = await buildIndividuals(payload.individuals || [], existing.individuals, files);
     if (individuals.length === 0 || individuals[0].role !== 'head') {
       return res.status(400).json({ error: 'A head of household is required.' });
     }
@@ -257,7 +278,7 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
     if (payload.removeFamilyPhoto) photo = undefined;
     if (payload._photoField) {
       const file = findFile(files, payload._photoField);
-      if (file) photo = toPhoto(file);
+      if (file) photo = await toPhoto(file);
     }
 
     existing.familyName = individuals[0].lastName;
@@ -276,8 +297,8 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
     existing.individuals = individuals;
 
     await existing.save();
-    const saved = await Family.findById(existing._id).select(EXCLUDE_PHOTO_DATA);
-    res.json(saved);
+    await deleteUnreferencedPhotos(beforePhotos, collectPhotoFilenames(existing));
+    res.json(existing);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -288,6 +309,7 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const family = await Family.findByIdAndDelete(req.params.id);
     if (!family) return res.status(404).json({ error: 'Family not found' });
+    await Promise.all(collectPhotoFilenames(family).map(deletePhoto));
     res.status(204).end();
   } catch (err) {
     res.status(400).json({ error: err.message });

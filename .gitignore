@@ -13,9 +13,11 @@ node_modules/
 .env.local
 .env.*.local
 .env.proddb
+.env.test
 
 # Uploaded family/individual photos (runtime data, not source)
 backend/uploads/
+backend/data/
 
 # Local database backups - real member data (names, addresses, photos), never committed
 backend/backups/
