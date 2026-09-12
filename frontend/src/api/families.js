@@ -35,6 +35,22 @@ export async function completeReview(id) {
   return res.json();
 }
 
+// Flags a family as needing a follow-up check, with an optional note - lets
+// an admin note something noticed in passing straight from the read-only
+// view, without a full edit-and-save round trip.
+export async function flagReview(id, note) {
+  const res = await fetch(`${BASE_URL}/${id}/flag-review`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to flag review');
+  }
+  return res.json();
+}
+
 // Builds a multipart/form-data request from the family form state.
 // formState: family fields + `photoFile` (File|undefined) + `removeFamilyPhoto` (bool)
 //   + individuals: [{ ...fields, _photoFile: File|undefined, removePhoto: bool }]

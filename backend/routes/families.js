@@ -219,6 +219,25 @@ router.patch('/:id/complete-review', requireRole('admin'), async (req, res) => {
   }
 });
 
+// PATCH /api/families/:id/flag-review - marks a family as needing a
+// follow-up check, with an optional note (admin only). Lets a reviewer flag
+// something noticed in passing (e.g. told in conversation that an address is
+// wrong) straight from the read-only view, before the correct info is known
+// and without a full edit-and-save round trip.
+router.patch('/:id/flag-review', requireRole('admin'), async (req, res) => {
+  try {
+    const note = typeof req.body?.note === 'string' ? req.body.note.trim() : '';
+    const update = { $set: { needsReview: true } };
+    if (note) update.$push = { reviewNotes: note };
+
+    const family = await Family.findByIdAndUpdate(req.params.id, update, { new: true });
+    if (!family) return res.status(404).json({ error: 'Family not found' });
+    res.json(family);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // POST /api/families - create a new family (admin only)
 router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
   try {

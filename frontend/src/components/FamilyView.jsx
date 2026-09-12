@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { familyPhotoUrl, completeReview } from '../api/families';
+import { familyPhotoUrl, completeReview, flagReview } from '../api/families';
 import './FamilyView.css';
 
 // Head/spouse are easily inferred from context (first two adults listed), so
@@ -53,6 +53,10 @@ function MemberLine({ individual, changedFields }) {
 export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCompleted }) {
   const [completing, setCompleting] = useState(false);
   const [completeError, setCompleteError] = useState(null);
+  const [flagOpen, setFlagOpen] = useState(false);
+  const [flagNote, setFlagNote] = useState('');
+  const [flagging, setFlagging] = useState(false);
+  const [flagError, setFlagError] = useState(null);
 
   const streetLine = [family.address, family.aptSuite].filter(Boolean).join(', ');
   const cityStateZip = [
@@ -87,16 +91,68 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCo
     }
   };
 
+  const handleFlagReview = async (e) => {
+    e.preventDefault();
+    setFlagging(true);
+    setFlagError(null);
+    try {
+      const updated = await flagReview(family._id, flagNote.trim());
+      onReviewCompleted(updated);
+      setFlagOpen(false);
+      setFlagNote('');
+    } catch (err) {
+      setFlagError(err.message);
+    } finally {
+      setFlagging(false);
+    }
+  };
+
   return (
     <div className="family-view">
       <div className="family-view-header">
         <h2>{family.familyName} Family</h2>
-        {isAdmin && (
-          <button type="button" className="primary-btn" onClick={onEdit}>
-            Edit Family
-          </button>
-        )}
+        <div className="family-view-header-actions">
+          {isAdmin && !family.needsReview && !flagOpen && (
+            <button type="button" onClick={() => setFlagOpen(true)}>
+              Flag for Review
+            </button>
+          )}
+          {isAdmin && (
+            <button type="button" className="primary-btn" onClick={onEdit}>
+              Edit Family
+            </button>
+          )}
+        </div>
       </div>
+
+      {isAdmin && flagOpen && (
+        <form className="flag-review-form" onSubmit={handleFlagReview}>
+          <label htmlFor="flag-review-note">
+            What needs a second look? <span className="flag-review-hint">(optional)</span>
+          </label>
+          <input
+            id="flag-review-note"
+            type="text"
+            value={flagNote}
+            onChange={(e) => setFlagNote(e.target.value)}
+            placeholder="e.g. Told me their address changed, don't have the new one yet"
+            autoFocus
+          />
+          <div className="flag-review-form-actions">
+            <button type="submit" disabled={flagging}>
+              {flagging ? 'Flagging...' : 'Flag for Review'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFlagOpen(false); setFlagNote(''); setFlagError(null); }}
+              disabled={flagging}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+      {flagError && <div className="form-error">{flagError}</div>}
 
       {isAdmin && family.needsReview && (
         <div className="needs-review-banner">

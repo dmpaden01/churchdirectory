@@ -15,6 +15,49 @@
   color: var(--text-h);
 }
 
+.family-view-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.flag-review-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.flag-review-form label {
+  flex-basis: 100%;
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 0.9rem;
+}
+
+.flag-review-hint {
+  font-weight: 400;
+  color: var(--text);
+}
+
+.flag-review-form input {
+  flex: 1;
+  min-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.flag-review-form-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .needs-review-banner {
   display: flex;
   flex-wrap: wrap;
@@ -148,10 +191,16 @@
 /* Narrow screens: the side-by-side photo + info layout gets cramped, so stack
    the photo on top and center everything below it instead. */
 @media (max-width: 640px) {
-  .needs-review-banner {
+  .needs-review-banner,
+  .flag-review-form {
     flex-direction: column;
     align-items: center;
     text-align: center;
+  }
+
+  .flag-review-form input {
+    width: 100%;
+    min-width: 0;
   }
 
   .family-card {
