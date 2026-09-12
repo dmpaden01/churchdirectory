@@ -20,7 +20,6 @@ async function exists(url) {
 }
 
 export const hasCustomLogo = () => exists(logoUrl());
-export const hasCustomFavicon = () => exists(faviconUrl());
 
 // Uploads the full-size logo; the backend derives and stores the 50x50
 // favicon from it in the same request.

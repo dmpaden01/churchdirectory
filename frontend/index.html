@@ -3,6 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Start fetching the site's custom logo/favicon (if any) as soon as the
+         HTML is parsed, instead of waiting for React to mount and request
+         them - see components/SiteLogo.jsx and utils/applyFavicon.js, which
+         request these same URLs so the browser can reuse this fetch. -->
+    <link rel="preload" as="image" href="/api/settings/logo" />
+    <link rel="preload" as="image" href="/api/settings/favicon" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Church Directory</title>
   </head>
