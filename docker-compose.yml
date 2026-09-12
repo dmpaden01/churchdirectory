@@ -38,6 +38,11 @@ services:
       EMAIL_FROM: ${EMAIL_FROM}
       BACKEND_PUBLIC_URL: ${BACKEND_PUBLIC_URL}
       FRONTEND_PUBLIC_URL: ${FRONTEND_PUBLIC_URL}
+      # Family/individual/logo/favicon photos live on this volume instead of
+      # in Mongo - see backend/utils/photoStorage.js.
+      PHOTOS_DIR: /app/data/photos
+    volumes:
+      - churchdirectory-photos:/app/data/photos
     depends_on:
       churchdirectory-db:
         condition: service_healthy
@@ -75,3 +80,5 @@ networks:
 volumes:
   churchdirectory-db-data:
     name: churchdirectory-db-data
+  churchdirectory-photos:
+    name: churchdirectory-photos
