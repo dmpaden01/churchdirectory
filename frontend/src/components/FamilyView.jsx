@@ -113,7 +113,7 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCo
         <h2>{family.familyName} Family</h2>
         <div className="family-view-header-actions">
           {isAdmin && !family.needsReview && !flagOpen && (
-            <button type="button" onClick={() => setFlagOpen(true)}>
+            <button type="button" className="flag-review-btn" onClick={() => setFlagOpen(true)}>
               Flag for Review
             </button>
           )}
