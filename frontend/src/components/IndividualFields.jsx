@@ -42,6 +42,7 @@ export default function IndividualFields({
         <PhotoDropzone
           label="Photo (optional)"
           existingUrl={existingPhotoUrl}
+          aspectRatio={1}
           onChange={(file) => onChange(index, { ...individual, _photoFile: file, removePhoto: false })}
           onRemove={() => onChange(index, { ...individual, _photoFile: undefined, removePhoto: true })}
         />

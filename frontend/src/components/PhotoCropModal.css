@@ -1,0 +1,68 @@
+.photo-crop-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.photo-crop-dialog {
+  background: var(--bg, #fff);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.photo-crop-stage {
+  position: relative;
+  width: 100%;
+  height: min(60vh, 400px);
+  background: #111827;
+}
+
+.photo-crop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.photo-crop-zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--text-h, #111827);
+}
+
+.photo-crop-zoom-control input[type='range'] {
+  flex: 1;
+}
+
+.photo-crop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.photo-crop-actions button {
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: var(--bg, #fff);
+  color: var(--text-h, #111827);
+}
+
+@media (max-width: 480px) {
+  .photo-crop-stage {
+    height: 55vh;
+  }
+}

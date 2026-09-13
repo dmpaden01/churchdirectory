@@ -59,11 +59,14 @@
 }
 
 .family-result-photo {
-  width: 48px;
+  /* Same 3:2 ratio as the edit form and Family View photo boxes (see
+     PhotoDropzone.css / FamilyView.css), since uploads are now cropped to it. */
+  width: 72px;
   height: 48px;
   border-radius: 6px;
   object-fit: cover;
   background: var(--code-bg);
+  flex-shrink: 0;
 }
 
 .family-result-info {
