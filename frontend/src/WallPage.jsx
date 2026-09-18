@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchWallFamilies, wallFamilyPhotoUrl, wallIndividualPhotoUrl } from './api/wall';
 import { getChurchName } from './api/settings';
 import SiteLogo from './components/SiteLogo';
@@ -9,6 +9,15 @@ const DEFAULT_TITLE = 'Church Directory';
 const WALL_KEY_STORAGE = 'wallKey';
 const FADE_MS = 1000;
 const DEFAULT_DURATION_MS = 10000;
+
+// This runs unattended as a kiosk display for long stretches, so it needs to
+// pick up database changes (a family/individual added, edited, or removed;
+// a Role/Status added; branding changed) on its own - see refreshData below.
+// 5 minutes is a hard ceiling on staleness for a single-page directory (which
+// never completes a "cycle" to piggyback the refresh on); a multi-page
+// directory usually refreshes sooner than this anyway, right as it loops
+// back to the first page.
+const STALE_REFRESH_MS = 5 * 60 * 1000;
 
 // Fixed, tight gap between a roster section's header and its own first row
 // of photos - deliberately much smaller than the space between different
@@ -306,7 +315,9 @@ function buildRosterPages(sections, metrics) {
 // chrome so it can fill the entire screen. Paginates instead of scrolling
 // (see measureGrid) and auto-cycles pages with a fade transition. The
 // Staff/Elders/Deacons roster (see buildRoster/buildRosterPages) is prepended
-// as its own page(s) ahead of the family pages.
+// as its own page(s) ahead of the family pages. Meant to run unattended for
+// long stretches, so it re-fetches on its own (see refreshData) rather than
+// needing a manual browser reload to pick up database changes.
 export default function WallPage() {
   const [wallKey, setWallKey] = useState(null);
   const [families, setFamilies] = useState([]);
@@ -344,15 +355,16 @@ export default function WallPage() {
     setWallKey(resolved);
   }, []);
 
-  useEffect(() => {
+  // Pulls the latest families/roster and branding - used for the initial
+  // load and every later refresh (see the effects below). A failure here is
+  // treated the same as an initial bad key: a kiosk that can no longer load
+  // is more useful showing "Access denied" (prompting someone to notice and
+  // investigate) than silently freezing on old data indefinitely.
+  const refreshData = useCallback(() => {
     if (!wallKey) return;
     getChurchName()
       .then((name) => setTitle(name || DEFAULT_TITLE))
       .catch(() => setTitle(DEFAULT_TITLE));
-  }, [wallKey]);
-
-  useEffect(() => {
-    if (!wallKey) return;
     fetchWallFamilies(wallKey)
       .then(setFamilies)
       .catch(() => {
@@ -364,6 +376,18 @@ export default function WallPage() {
         setError(true);
       });
   }, [wallKey]);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  // Safety-net refresh for a single-page directory, which never completes a
+  // "cycle" to trigger the refresh below on its own.
+  useEffect(() => {
+    if (!wallKey) return undefined;
+    const interval = setInterval(refreshData, STALE_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [wallKey, refreshData]);
 
   const roster = useMemo(() => buildRoster(families), [families]);
 
@@ -423,11 +447,17 @@ export default function WallPage() {
   useEffect(() => {
     if (visible) return undefined;
     const timeout = setTimeout(() => {
+      // Refresh right as we loop back to the first page - the display is
+      // already fully faded out at this instant, so new data (or a changed
+      // page count) can't cause a visible jump the way refreshing mid-cycle
+      // might.
+      const completingACycle = pages.length > 0 && pageIndex + 1 >= pages.length;
       setPageIndex((i) => (i + 1) % pages.length);
       setVisible(true);
+      if (completingACycle) refreshData();
     }, FADE_MS);
     return () => clearTimeout(timeout);
-  }, [visible, pages.length]);
+  }, [visible, pages.length, pageIndex, refreshData]);
 
   // null: still resolving the key, or redirecting away (see above) because
   // there wasn't one - render nothing either way.
