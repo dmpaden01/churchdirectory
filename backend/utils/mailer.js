@@ -70,7 +70,7 @@ export function sendApprovalEmail(to, firstName, token) {
 }
 
 export function sendAdminNotificationEmail(to, registrant) {
-  const url = `${process.env.FRONTEND_PUBLIC_URL}/?view=users`;
+  const url = `${process.env.FRONTEND_PUBLIC_URL}/users`;
   return sendMail({
     to,
     subject: 'New registration awaiting approval - Church Directory',

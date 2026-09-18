@@ -1,6 +1,6 @@
 // Shared helpers for turning a parsed PDF-import draft into FamilyForm's form
 // state, used both by the one-at-a-time "Review & Save" flow (FamilyForm) and
-// the "Accept All Changes" bulk-import flow (DirectoryPage), so the two stay
+// the "Accept All Changes" bulk-import flow (routes/ImportRoute), so the two stay
 // in sync instead of maintaining two separate mappings.
 
 // Decodes a data: URL (e.g. a photo pulled from an imported PDF) into a real File,
