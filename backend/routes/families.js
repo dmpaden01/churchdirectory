@@ -89,12 +89,36 @@ function reviewFieldsFromPayload(payload) {
   };
 }
 
-// GET /api/families?search=lastName - list families, optionally filtered by family name
+// Fields searched by default: the family name plus every individual's first/last name.
+const DEFAULT_SEARCH_FIELDS = ['familyName', 'individuals.firstName', 'individuals.lastName'];
+
+// Every remaining free-text field, searched only when the caller asks for
+// allFields=true (address/contact info isn't something most searches want).
+const ALL_SEARCH_FIELDS = [
+  ...DEFAULT_SEARCH_FIELDS,
+  'address',
+  'aptSuite',
+  'city',
+  'state',
+  'zipCode',
+  'homePhone',
+  'anniversary',
+  'individuals.suffix',
+  'individuals.roleStatus',
+  'individuals.cellPhone',
+  'individuals.email',
+  'individuals.birthday',
+];
+
+// GET /api/families?search=...&allFields=true - list families, optionally
+// filtered by name (default) or every field (allFields=true).
 router.get('/', async (req, res) => {
   try {
-    const { search } = req.query;
-    const filter = search
-      ? { familyName: { $regex: search.trim(), $options: 'i' } }
+    const { search, allFields } = req.query;
+    const trimmed = search?.trim();
+    const fields = allFields === 'true' ? ALL_SEARCH_FIELDS : DEFAULT_SEARCH_FIELDS;
+    const filter = trimmed
+      ? { $or: fields.map((field) => ({ [field]: { $regex: trimmed, $options: 'i' } })) }
       : {};
     const families = await Family.find(filter)
       .sort({ familyName: 1 })

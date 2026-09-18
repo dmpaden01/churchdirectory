@@ -10,9 +10,12 @@ export function individualPhotoUrl(familyId, index, individual) {
   return individual?.photo?.contentType ? `${BASE_URL}/${familyId}/individuals/${index}/photo` : undefined;
 }
 
-export async function searchFamilies(search) {
-  const url = search ? `${BASE_URL}?search=${encodeURIComponent(search)}` : BASE_URL;
-  const res = await fetch(url);
+export async function searchFamilies(search, { allFields = false } = {}) {
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (allFields) params.set('allFields', 'true');
+  const query = params.toString();
+  const res = await fetch(query ? `${BASE_URL}?${query}` : BASE_URL);
   if (!res.ok) throw new Error('Failed to load families');
   return res.json();
 }

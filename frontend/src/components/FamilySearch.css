@@ -5,7 +5,15 @@
   margin-bottom: 16px;
 }
 
-.family-search-header input {
+.family-search-input-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  flex: 1 1 260px;
+}
+
+.family-search-input-group input[type="text"] {
   flex: 1 1 200px;
   min-width: 200px;
   padding: 10px 12px;
@@ -14,6 +22,16 @@
   font-size: 0.95rem;
   background: var(--bg);
   color: var(--text-h);
+}
+
+.family-search-all-fields {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .family-search-actions {

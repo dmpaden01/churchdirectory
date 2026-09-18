@@ -23,6 +23,7 @@ function fullNameWithSuffix(individual) {
 // Search-by-family-name box plus results list, and the "Add new family" entry point.
 export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onReviewFamily, refreshToken, isAdmin }) {
   const [query, setQuery] = useState('');
+  const [searchAllFields, setSearchAllFields] = useState(false);
   const [families, setFamilies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -30,22 +31,32 @@ export default function FamilySearch({ onSelectFamily, onAddNew, onImport, onRev
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    searchFamilies(query)
+    searchFamilies(query, { allFields: searchAllFields })
       .then((results) => { if (!cancelled) setFamilies(results); })
       .catch((err) => { if (!cancelled) setError(err.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [query, refreshToken]);
+  }, [query, searchAllFields, refreshToken]);
 
   return (
     <div className="family-search">
       <div className="family-search-header">
-        <input
-          type="text"
-          placeholder="Search by family (last) name..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="family-search-input-group">
+          <input
+            type="text"
+            placeholder={searchAllFields ? 'Search all fields...' : 'Search by name...'}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <label className="family-search-all-fields">
+            <input
+              type="checkbox"
+              checked={searchAllFields}
+              onChange={(e) => setSearchAllFields(e.target.checked)}
+            />
+            Search all fields
+          </label>
+        </div>
         {isAdmin && (
           <div className="family-search-actions">
             <button type="button" className="primary-btn" onClick={onAddNew}>
