@@ -41,6 +41,14 @@ export async function resetLogo() {
   }
 }
 
+// Shown in the footer on every page (see Footer.jsx). Fields are `null` if
+// unavailable (e.g. not deployed via docker-compose, or HEAD isn't tagged).
+export async function getVersionInfo() {
+  const res = await fetch(`${BASE_URL}/version`);
+  if (!res.ok) throw new Error('Failed to load version info');
+  return res.json();
+}
+
 // Shown at the top of the /wall kiosk display in place of the default
 // "Church Directory" title when set (see WallPage.jsx). `null` means unset.
 export async function getChurchName() {

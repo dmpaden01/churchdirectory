@@ -44,6 +44,9 @@ services:
       PHOTOS_DIR: /app/data/photos
     volumes:
       - churchdirectory-photos:/app/data/photos
+      # Read-only - lets utils/gitVersion.js report the branch/tag/commit
+      # that's actually checked out on the host, with no extra deploy step.
+      - ./.git:/app/.git:ro
     depends_on:
       churchdirectory-db:
         condition: service_healthy

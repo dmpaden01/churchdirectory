@@ -4,6 +4,7 @@ import upload from '../middleware/upload.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { generateFaviconBuffer } from '../utils/generateFavicon.js';
 import { savePhoto, deletePhoto, photoAbsolutePath } from '../utils/photoStorage.js';
+import { gitVersion } from '../utils/gitVersion.js';
 
 const router = express.Router();
 
@@ -78,6 +79,12 @@ router.delete('/logo', requireAuth, requireRole('admin'), async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// GET /api/settings/version - public: branch/tag + short commit hash, shown
+// in the footer on every page (see gitVersion.js for where this comes from).
+router.get('/version', (req, res) => {
+  res.json(gitVersion);
 });
 
 // GET /api/settings/church-name - public: read by the /wall kiosk display

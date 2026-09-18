@@ -11,3 +11,9 @@
 .app-footer p {
   margin: 0;
 }
+
+.app-footer-version {
+  opacity: 0.6;
+  font-size: 0.72rem;
+  margin-bottom: 4px !important;
+}
