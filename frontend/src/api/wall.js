@@ -8,6 +8,12 @@ export function wallFamilyPhotoUrl(family, key) {
     : undefined;
 }
 
+export function wallIndividualPhotoUrl(familyId, index, individual, key) {
+  return individual?.photo?.contentType
+    ? `${BASE_URL}/families/${familyId}/individuals/${index}/photo?key=${encodeURIComponent(key)}`
+    : undefined;
+}
+
 export async function fetchWallFamilies(key) {
   const res = await fetch(`${BASE_URL}/families?key=${encodeURIComponent(key)}`);
   if (!res.ok) throw new Error('Failed to load families');

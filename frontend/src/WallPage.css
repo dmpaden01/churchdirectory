@@ -55,7 +55,7 @@
   opacity: 1;
 }
 
-.wall-grid.wall-fade-out {
+.wall-fade-out {
   opacity: 0;
 }
 
@@ -68,6 +68,62 @@
   visibility: hidden;
   pointer-events: none;
   transition: none;
+}
+
+/* The Staff/Elders/Deacons roster page(s), shown before the family pages -
+   a vertical stack of section headers and rows of person cells (each row is
+   its own .wall-grid, sized to the same column count as the family pages). */
+/* justify-content/gap are set inline (see WallPage.jsx) using the same
+   gap:0 + evenly-distributed technique as the family grid, so leftover
+   vertical space reads as consistently spaced rather than one oversized gap
+   - see the comment above the family grid's gridStyle in WallPage.jsx. */
+.wall-roster-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: opacity 1s ease;
+  opacity: 1;
+}
+
+/* Each row of the roster is its own flex row rather than a grid track, so a
+   partial last row (fewer people than the column count) centers as a group
+   instead of sitting flush left in otherwise-empty grid tracks. Cell width
+   is fixed per cell (see PersonCell's `style` prop in WallPage.jsx, sized off
+   the family grid's own measured column width). flex-wrap stays "nowrap" -
+   a full row of `columns` cells is sized to exactly fill the available
+   width, so any sub-pixel rounding overflow should only ever clip a hair off
+   the outermost cells rather than wrap the last cell onto a second line,
+   which would silently double the row's height and break the page-fitting
+   math in buildRosterPages (which assumes one row = one rowHeight). */
+.wall-roster-row {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.wall-roster-row .wall-cell {
+  flex: 0 0 auto;
+}
+
+.wall-section-header {
+  margin: 0;
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: 0.03em;
+  color: var(--text-h);
+}
+
+/* Off-screen probe used only to measure a section header's height and one
+   full row of person cells (see measureRosterMetrics in WallPage.jsx) - the
+   family measurement grid can't stand in for this since person cells have a
+   different number of text lines than family cells. */
+.wall-roster-probe {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .wall-cell {
@@ -104,6 +160,11 @@
 
 .wall-cell-children {
   font-style: italic;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+
+.wall-cell-role {
   font-size: 1.2rem;
   color: var(--text);
 }
