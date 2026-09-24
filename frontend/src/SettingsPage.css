@@ -2,3 +2,23 @@
   color: var(--text);
   margin: 0 0 16px;
 }
+
+.settings-geocoding {
+  margin-top: 16px;
+}
+
+.settings-geocoding-missing {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
+}
+
+.settings-key-row {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-key-row input {
+  flex: 1;
+  min-width: 0;
+}

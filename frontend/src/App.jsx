@@ -11,6 +11,7 @@ import ImportRoute from './routes/ImportRoute';
 import ImportFormRoute from './routes/ImportFormRoute';
 import UsersRoute from './routes/UsersRoute';
 import SettingsRoute from './routes/SettingsRoute';
+import FamilyMapPage from './FamilyMapPage';
 import AccountRoute from './routes/AccountRoute';
 import Footer from './components/Footer';
 import { getCurrentUser } from './api/auth';
@@ -96,6 +97,7 @@ function App() {
             <Route path="families/new" element={<FamilyFormRoute />} />
             <Route path="families/:id" element={<FamilyViewRoute />} />
             <Route path="families/:id/edit" element={<FamilyFormRoute />} />
+            <Route path="map" element={<FamilyMapPage />} />
             <Route path="import" element={<ImportRoute />} />
             <Route path="import/:draftKey" element={<ImportFormRoute />} />
             <Route path="users" element={<UsersRoute />} />

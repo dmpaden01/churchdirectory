@@ -18,6 +18,7 @@ import { normalizeAnniversary } from '../utils/anniversary.js';
 import { normalizeBirthday } from '../utils/birthday.js';
 import { buildVCard } from '../utils/vcard.js';
 import { stripYear } from '../utils/monthDayYear.js';
+import { syncGeocodes } from '../utils/geocoder.js';
 
 const router = express.Router();
 
@@ -160,7 +161,7 @@ router.get('/', async (req, res) => {
       : {};
     const families = await Family.find(filter)
       .sort({ familyName: 1 })
-      .select('-address -aptSuite -zipCode -homePhone -anniversary')
+      .select('-address -aptSuite -zipCode -homePhone -anniversary -geo')
       .lean();
     res.json(isAdmin(req) ? families : families.map(withoutYears));
   } catch (err) {
@@ -355,6 +356,7 @@ router.post('/', requireRole('admin'), upload.any(), async (req, res) => {
     });
 
     await family.save();
+    syncGeocodes(); // locate the new address for the Family Map
     res.status(201).json(family);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -401,6 +403,7 @@ router.put('/:id', requireRole('admin'), upload.any(), async (req, res) => {
 
     await existing.save();
     await deleteUnreferencedPhotos(beforePhotos, collectPhotoFilenames(existing));
+    syncGeocodes(); // re-locate for the Family Map if the address changed
     res.json(existing);
   } catch (err) {
     res.status(400).json({ error: err.message });

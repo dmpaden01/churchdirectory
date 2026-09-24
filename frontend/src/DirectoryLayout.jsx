@@ -51,6 +51,13 @@ export default function DirectoryLayout() {
           >
             Families
           </button>
+          <button
+            type="button"
+            className={location.pathname === '/map' ? 'active' : ''}
+            onClick={() => navigate('/map')}
+          >
+            Map
+          </button>
           {isAdmin && (
             <button
               type="button"

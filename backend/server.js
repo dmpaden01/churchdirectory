@@ -8,8 +8,10 @@ import wallRouter from './routes/wall.js';
 import authRouter from './routes/auth.js';
 import usersRouter from './routes/users.js';
 import settingsRouter from './routes/settings.js';
+import mapRouter from './routes/map.js';
 import { requireAuth } from './middleware/auth.js';
 import { seedAdminUser } from './utils/seedAdmin.js';
+import { startGeocodeSchedule } from './utils/geocoder.js';
 
 dotenv.config();
 
@@ -25,6 +27,7 @@ mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('🍃 MongoDB Connected Successfully');
     await seedAdminUser();
+    startGeocodeSchedule();
   })
   .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
@@ -41,6 +44,8 @@ app.use('/api/settings', settingsRouter);
 // Read access (search/view/photos) is open to any signed-in user; write routes
 // (create/update/delete/import) enforce admin themselves within familiesRouter.
 app.use('/api/families', requireAuth, familiesRouter);
+// Family Map data/config for any signed-in user (see utils/geocoder.js).
+app.use('/api/map', requireAuth, mapRouter);
 // Public read-only wall kiosk display - gated by a shared key (see
 // middleware/auth.js requireWallKey) instead of a signed-in user.
 app.use('/api/wall', wallRouter);

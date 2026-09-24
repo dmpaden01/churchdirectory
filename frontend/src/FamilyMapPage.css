@@ -1,0 +1,33 @@
+.family-map {
+  width: 100%;
+  height: min(70vh, 640px);
+  min-height: 360px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Info windows are always Google's white popup regardless of the site
+   theme, so these use fixed dark-on-light colors instead of theme tokens. */
+.family-map-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #1f2937;
+  font-size: 0.95rem;
+}
+
+.family-map-info-name {
+  font-weight: 700;
+  color: #6d28d9;
+  text-decoration: none;
+}
+
+.family-map-info-name:not(:first-child) {
+  margin-top: 4px;
+}
+
+.family-map-info-name:hover {
+  text-decoration: underline;
+}
+

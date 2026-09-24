@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 import { generateFaviconBuffer } from '../utils/generateFavicon.js';
 import { savePhoto, deletePhoto, photoAbsolutePath } from '../utils/photoStorage.js';
 import { gitVersion } from '../utils/gitVersion.js';
+import { geocodeStatus, syncGeocodes } from '../utils/geocoder.js';
 
 const router = express.Router();
 
@@ -108,6 +109,60 @@ router.put('/church-name', requireAuth, requireRole('admin'), async (req, res) =
       await Setting.findByIdAndUpdate(SINGLETON_ID, { $unset: { churchName: '' } });
     }
     res.json({ churchName: churchName || null });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+const MAPS_KEY_FIELDS = ['googleMapsApiKey', 'googleGeocodingApiKey'];
+
+// Keys are write-only here: the page only learns whether each one is set.
+async function mapsSettingsResponse() {
+  const settings = await Setting.findById(SINGLETON_ID)
+    .select('googleMapsApiKey googleGeocodingApiKey googleMapId')
+    .lean();
+  return {
+    googleMapsApiKeySet: Boolean(settings?.googleMapsApiKey),
+    googleGeocodingApiKeySet: Boolean(settings?.googleGeocodingApiKey),
+    googleMapId: settings?.googleMapId || '',
+    geocoding: await geocodeStatus(),
+  };
+}
+
+// GET /api/settings/maps (admin only) - Family Map settings plus how far
+// geocoding of family addresses has gotten.
+router.get('/maps', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    res.json(await mapsSettingsResponse());
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT /api/settings/maps (admin only). Key fields: a non-empty string
+// replaces the key, null removes it, and blank/missing leaves it unchanged.
+// googleMapId: blank clears it. Starts geocoding any not-yet-located
+// addresses right away in case a key was added or replaced.
+router.put('/maps', requireAuth, requireRole('admin'), async (req, res) => {
+  try {
+    const $set = {};
+    const $unset = {};
+    for (const field of MAPS_KEY_FIELDS) {
+      const value = req.body[field];
+      if (value === null) $unset[field] = '';
+      else if (typeof value === 'string' && value.trim()) $set[field] = value.trim();
+    }
+    if ('googleMapId' in req.body) {
+      const mapId = typeof req.body.googleMapId === 'string' ? req.body.googleMapId.trim() : '';
+      if (mapId) $set.googleMapId = mapId;
+      else $unset.googleMapId = '';
+    }
+    // Mongo 4.4 rejects an empty $unset, so only include it when needed.
+    const update = { $set: { _id: SINGLETON_ID, ...$set } };
+    if (Object.keys($unset).length) update.$unset = $unset;
+    await Setting.findByIdAndUpdate(SINGLETON_ID, update, { upsert: true });
+    syncGeocodes();
+    res.json(await mapsSettingsResponse());
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

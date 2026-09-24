@@ -70,3 +70,24 @@ export async function updateChurchName(churchName) {
   }
   return (await res.json()).churchName;
 }
+
+// Family Map (Google Maps) settings - admin only. Includes a `geocoding`
+// summary of how many family addresses have been located so far.
+export async function getMapsSettings() {
+  const res = await fetch(`${BASE_URL}/maps`);
+  if (!res.ok) throw new Error('Failed to load the map settings');
+  return res.json();
+}
+
+export async function updateMapsSettings(values) {
+  const res = await fetch(`${BASE_URL}/maps`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(values),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update the map settings');
+  }
+  return res.json();
+}

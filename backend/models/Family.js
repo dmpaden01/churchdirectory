@@ -12,6 +12,20 @@ const photoSchema = new Schema(
   { _id: false },
 );
 
+// Cached Geocoding API result for the family's address (see
+// utils/geocoder.js) - `address` is the exact string that was geocoded, so a
+// later edit to the address is detected and re-geocoded.
+const geoSchema = new Schema(
+  {
+    address: { type: String, required: true },
+    status: { type: String, enum: ['ok', 'not_found', 'error'], required: true },
+    lat: { type: Number },
+    lng: { type: Number },
+    geocodedAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
 const individualSchema = new Schema({
   role: {
     type: String,
@@ -44,6 +58,7 @@ const familySchema = new Schema(
     // data, but the field supports one in case it becomes available later.
     anniversary: { type: String, trim: true },
     photo: { type: photoSchema },
+    geo: { type: geoSchema },
     // Set when a family is bulk-accepted from a PDF import without individual
     // review, so an admin can find and double-check it later.
     needsReview: { type: Boolean, default: false },
