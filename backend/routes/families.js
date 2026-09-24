@@ -17,6 +17,7 @@ import { matchImagesToFamilies } from '../utils/pdfPhotoMatcher.js';
 import { normalizeAnniversary } from '../utils/anniversary.js';
 import { normalizeBirthday } from '../utils/birthday.js';
 import { buildVCard } from '../utils/vcard.js';
+import { stripYear } from '../utils/monthDayYear.js';
 
 const router = express.Router();
 
@@ -111,6 +112,42 @@ const ALL_SEARCH_FIELDS = [
   'individuals.birthday',
 ];
 
+// Fields stored as "MM/DD[/YYYY]" whose year only admins get to see.
+const YEAR_FIELDS = ['anniversary', 'individuals.birthday'];
+
+function isAdmin(req) {
+  return req.user?.role === 'admin';
+}
+
+// Plain-object copy of a family with birthday/anniversary years removed, for
+// non-admin responses (issue #16) - done here rather than in the UI so the
+// year never reaches a non-admin's browser at all.
+function withoutYears(family) {
+  const obj = typeof family.toObject === 'function' ? family.toObject() : family;
+  return {
+    ...obj,
+    anniversary: stripYear(obj.anniversary),
+    individuals: obj.individuals?.map((ind) => ({ ...ind, birthday: stripYear(ind.birthday) })),
+  };
+}
+
+// Search condition for one field. For non-admins, year fields are matched
+// against just their "MM/DD" part, so searching e.g. "1962" can't be used to
+// find out who was born that year.
+function searchCondition(field, regex, admin) {
+  if (admin || !YEAR_FIELDS.includes(field)) {
+    return { [field]: { $regex: regex, $options: 'i' } };
+  }
+  const monthDay = (path) => ({ $substrCP: [{ $ifNull: [path, ''] }, 0, 5] });
+  const matches = (path) => ({ $regexMatch: { input: monthDay(path), regex, options: 'i' } });
+  if (field === 'anniversary') return { $expr: matches('$anniversary') };
+  return {
+    $expr: {
+      $anyElementTrue: [{ $map: { input: { $ifNull: ['$individuals', []] }, as: 'ind', in: matches('$$ind.birthday') } }],
+    },
+  };
+}
+
 // GET /api/families?search=...&allFields=true - list families, optionally
 // filtered by name (default) or every field (allFields=true).
 router.get('/', async (req, res) => {
@@ -119,13 +156,13 @@ router.get('/', async (req, res) => {
     const trimmed = search?.trim();
     const fields = allFields === 'true' ? ALL_SEARCH_FIELDS : DEFAULT_SEARCH_FIELDS;
     const filter = trimmed
-      ? { $or: fields.map((field) => ({ [field]: { $regex: trimmed, $options: 'i' } })) }
+      ? { $or: fields.map((field) => searchCondition(field, trimmed, isAdmin(req))) }
       : {};
     const families = await Family.find(filter)
       .sort({ familyName: 1 })
       .select('-address -aptSuite -zipCode -homePhone -anniversary')
       .lean();
-    res.json(families);
+    res.json(isAdmin(req) ? families : families.map(withoutYears));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -221,7 +258,8 @@ router.get('/:id/individuals/:index/photo', async (req, res) => {
 // Contact" sheet directly; Android downloads it and opens it in Contacts.
 router.get('/:id/individuals/:index/vcard', async (req, res) => {
   try {
-    const family = await Family.findById(req.params.id);
+    const found = await Family.findById(req.params.id);
+    const family = found && (isAdmin(req) ? found : withoutYears(found));
     const individual = family?.individuals?.[req.params.index];
     if (!individual) return res.status(404).end();
     const filename = [individual.firstName, individual.lastName]
@@ -241,7 +279,7 @@ router.get('/:id', async (req, res) => {
   try {
     const family = await Family.findById(req.params.id);
     if (!family) return res.status(404).json({ error: 'Family not found' });
-    res.json(family);
+    res.json(isAdmin(req) ? family : withoutYears(family));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

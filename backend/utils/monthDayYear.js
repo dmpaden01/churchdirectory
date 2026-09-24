@@ -14,3 +14,9 @@ export function normalizeMonthDayYear(value) {
   const base = `${mm.padStart(2, '0')}/${dd.padStart(2, '0')}`;
   return yyyy ? `${base}/${yyyy}` : base;
 }
+
+// "MM/DD/YYYY" -> "MM/DD" (anything else passes through unchanged). Birth
+// years reveal ages, so only admins see them - see routes/families.js.
+export function stripYear(value) {
+  return typeof value === 'string' ? value.replace(/^(\d{2}\/\d{2})\/\d{4}$/, '$1') : value;
+}
