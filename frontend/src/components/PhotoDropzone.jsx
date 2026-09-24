@@ -4,6 +4,18 @@ import { cropImageToFile } from '../utils/cropImage';
 import './PhotoDropzone.css';
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
+const BOX_HEIGHT = 120;
+const DEFAULT_RATIO = 3 / 2;
+
+// width/height of an image, once it has loaded.
+function loadImageRatio(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img.naturalWidth / img.naturalHeight || DEFAULT_RATIO);
+    img.onerror = () => resolve(DEFAULT_RATIO);
+    img.src = url;
+  });
+}
 
 // Drag-and-drop (or click-to-browse) photo uploader with preview. Every photo
 // is run through <PhotoCropModal> before it reaches onChange, so uploads are
@@ -17,22 +29,27 @@ const ACCEPTED_TYPES = ['image/jpeg', 'image/png'];
 // diffs are shown elsewhere in the form (see .field-group.field-changed).
 // aspectRatio (optional): width/height of both the crop tool and the
 // dropzone box itself - 3:2 (the family/edit-form standard) unless overridden,
-// e.g. 1 for a square individual profile photo.
-export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, changed, aspectRatio = 3 / 2 }) {
+// e.g. 1 for a square individual profile photo. 'auto' (the site logo) sizes
+// the box to the current image's own shape, and starts the crop tool at the
+// picked image's own shape so nothing is trimmed unless the user zooms in.
+export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, changed, aspectRatio = DEFAULT_RATIO }) {
+  const autoRatio = aspectRatio === 'auto';
   const [isDragging, setIsDragging] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(existingUrl || null);
   const [cropModalUrl, setCropModalUrl] = useState(null);
   const [hasEditableSource, setHasEditableSource] = useState(false);
+  const [previewRatio, setPreviewRatio] = useState(null); // auto mode: shown image's shape
+  const [cropRatio, setCropRatio] = useState(DEFAULT_RATIO); // auto mode: crop tool's shape
 
   const objectUrlRef = useRef(null); // blob URL of the cropped output (previewUrl)
   // Raw (uncropped) image behind the currently-applied crop, kept around only
   // so "Adjust crop" can re-open the crop UI without re-compressing an
   // already-cropped image. Only ever updated when a crop is confirmed.
   const sourceUrlRef = useRef(null);
-  const sourceMetaRef = useRef(null); // { fileName, mimeType } for sourceUrlRef
+  const sourceMetaRef = useRef(null); // { fileName, mimeType, ratio } for sourceUrlRef
   // A freshly picked file waiting on crop confirmation - kept separate from
   // sourceUrlRef so cancelling never disturbs the already-applied photo.
-  const pendingPickRef = useRef(null); // { url, fileName, mimeType } | null
+  const pendingPickRef = useRef(null); // { url, fileName, mimeType, ratio } | null
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -47,7 +64,7 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
     if (pendingPickRef.current) URL.revokeObjectURL(pendingPickRef.current.url);
   }, []);
 
-  const handleFile = useCallback((file) => {
+  const handleFile = useCallback(async (file) => {
     if (!file) return;
     if (!ACCEPTED_TYPES.includes(file.type)) {
       alert('Only .jpg and .png photos are allowed.');
@@ -55,9 +72,11 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
     }
     if (pendingPickRef.current) URL.revokeObjectURL(pendingPickRef.current.url);
     const url = URL.createObjectURL(file);
-    pendingPickRef.current = { url, fileName: file.name, mimeType: file.type };
+    const ratio = autoRatio ? await loadImageRatio(url) : aspectRatio;
+    pendingPickRef.current = { url, fileName: file.name, mimeType: file.type, ratio };
+    setCropRatio(ratio);
     setCropModalUrl(url);
-  }, []);
+  }, [autoRatio, aspectRatio]);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -69,6 +88,7 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
   const handleEditCrop = (e) => {
     e.stopPropagation();
     if (!sourceUrlRef.current) return;
+    setCropRatio(sourceMetaRef.current.ratio);
     setCropModalUrl(sourceUrlRef.current);
   };
 
@@ -90,7 +110,8 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
     if (pendingPickRef.current) {
       if (sourceUrlRef.current) URL.revokeObjectURL(sourceUrlRef.current);
       sourceUrlRef.current = pendingPickRef.current.url;
-      sourceMetaRef.current = { fileName: pendingPickRef.current.fileName, mimeType: pendingPickRef.current.mimeType };
+      const { fileName, mimeType, ratio } = pendingPickRef.current;
+      sourceMetaRef.current = { fileName, mimeType, ratio };
       pendingPickRef.current = null;
     }
 
@@ -120,12 +141,19 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
     onRemove();
   };
 
+  const boxRatio = autoRatio ? (previewUrl && previewRatio) || DEFAULT_RATIO : aspectRatio;
+  // Auto mode can get very wide (e.g. a banner logo) - cap it at the
+  // available width and let the height shrink to keep the shape.
+  const boxStyle = autoRatio
+    ? { width: `min(${BOX_HEIGHT * boxRatio}px, 100%)`, aspectRatio: String(boxRatio) }
+    : { width: `${BOX_HEIGHT * aspectRatio}px`, height: `${BOX_HEIGHT}px` };
+
   return (
     <div className="photo-dropzone-wrapper">
       {label && <label className={`photo-dropzone-label${changed ? ' changed' : ''}`}>{label}</label>}
       <div
-        className={`photo-dropzone${isDragging ? ' dragging' : ''}${previewUrl ? ' has-photo' : ''}${changed ? ' changed' : ''}`}
-        style={{ width: `${120 * aspectRatio}px`, height: '120px' }}
+        className={`photo-dropzone${isDragging ? ' dragging' : ''}${previewUrl ? ' has-photo' : ''}${changed ? ' changed' : ''}${autoRatio ? ' auto-ratio' : ''}`}
+        style={boxStyle}
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
@@ -135,7 +163,12 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
       >
         {previewUrl ? (
           <>
-            <img src={previewUrl} alt="Preview" className="photo-preview" />
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="photo-preview"
+              onLoad={autoRatio ? (e) => setPreviewRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight) : undefined}
+            />
             {hasEditableSource && (
               <button type="button" className="photo-edit-crop-btn" onClick={handleEditCrop} title="Adjust crop">
                 Adjust crop
@@ -162,7 +195,7 @@ export default function PhotoDropzone({ label, existingUrl, onChange, onRemove, 
       {cropModalUrl && (
         <PhotoCropModal
           imageUrl={cropModalUrl}
-          aspectRatio={aspectRatio}
+          aspectRatio={autoRatio ? cropRatio : aspectRatio}
           onCancel={handleCropCancel}
           onConfirm={handleCropConfirm}
         />

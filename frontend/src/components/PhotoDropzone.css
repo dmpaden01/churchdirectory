@@ -83,6 +83,12 @@
   object-fit: cover;
 }
 
+/* Box already matches the image's shape - contain avoids a brief crop while
+   the image loads and the box is still at its default shape. */
+.photo-dropzone.auto-ratio .photo-preview {
+  object-fit: contain;
+}
+
 .photo-remove-btn {
   position: absolute;
   top: 4px;

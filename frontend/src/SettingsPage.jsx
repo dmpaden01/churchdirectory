@@ -258,6 +258,7 @@ export default function SettingsPage() {
             key={resetKey}
             label="Logo"
             existingUrl={hasCustom ? `${logoUrl()}?v=${cacheBust}` : null}
+            aspectRatio="auto"
             onChange={handleChange}
             onRemove={handleRemove}
           />
