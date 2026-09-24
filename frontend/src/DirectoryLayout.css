@@ -17,6 +17,8 @@
 .admin-header h1 {
   text-align: left;
   margin-bottom: 10px;
+  font-family: 'Lato', var(--heading);
+  font-weight: 700;
 }
 
 .admin-header-signout {
@@ -103,7 +105,7 @@
 
 .primary-btn {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   border: none;
   border-radius: 6px;
   padding: 10px 18px;

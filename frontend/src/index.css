@@ -4,9 +4,13 @@
   --bg: #fff;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
+  /* Brand green from centervillechurchofchrist.com (light mode only - dark
+     mode overrides it below). --accent-contrast is the text color on a solid
+     --accent background (e.g. .primary-btn). */
+  --accent: #279054;
+  --accent-bg: rgba(39, 144, 84, 0.1);
+  --accent-border: rgba(39, 144, 84, 0.5);
+  --accent-contrast: #fff;
   --social-bg: rgba(244, 243, 236, 0.5);
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -37,6 +41,7 @@
     --bg: #16171d;
     --border: #2e303a;
     --code-bg: #1f2028;
+    /* Dark mode keeps the original purple accent. */
     --accent: #c084fc;
     --accent-bg: rgba(192, 132, 252, 0.15);
     --accent-border: rgba(192, 132, 252, 0.5);
