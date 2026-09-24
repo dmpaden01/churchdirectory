@@ -26,6 +26,14 @@ export async function searchFamilies(search, { allFields = false } = {}) {
   return res.json();
 }
 
+// [{ type: 'birthday'|'anniversary', familyId, name, date: "MM/DD[/YYYY]" }]
+// - the year is only present for admins.
+export async function getDates() {
+  const res = await fetch(`${BASE_URL}/dates`);
+  if (!res.ok) throw new Error('Failed to load birthdays and anniversaries');
+  return res.json();
+}
+
 export async function getFamily(id) {
   const res = await fetch(`${BASE_URL}/${id}`);
   if (!res.ok) throw new Error('Failed to load family');

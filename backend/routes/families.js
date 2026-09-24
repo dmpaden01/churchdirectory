@@ -169,6 +169,42 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/families/dates - every birthday and anniversary, for the Dates
+// page. Years are only included for admins (see withoutYears above).
+router.get('/dates', async (req, res) => {
+  try {
+    const families = await Family.find()
+      .select('familyName anniversary individuals.role individuals.firstName individuals.lastName individuals.suffix individuals.birthday')
+      .lean();
+
+    const year = (value) => (isAdmin(req) ? value : stripYear(value));
+    const dates = [];
+    for (const family of families) {
+      for (const ind of family.individuals) {
+        if (!ind.birthday) continue;
+        dates.push({
+          type: 'birthday',
+          familyId: family._id,
+          name: [ind.firstName, ind.lastName, ind.suffix].filter(Boolean).join(' '),
+          date: year(ind.birthday),
+        });
+      }
+      if (family.anniversary) {
+        const couple = family.individuals.filter((ind) => ind.role !== 'child').map((ind) => ind.firstName);
+        dates.push({
+          type: 'anniversary',
+          familyId: family._id,
+          name: `${couple.join(' & ')} ${family.familyName}`.trim(),
+          date: year(family.anniversary),
+        });
+      }
+    }
+    res.json(dates);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/families/parse-pdf - extract draft families from a legacy directory PDF for review.
 // Nothing is saved here; the client reviews/completes each draft and creates it via POST /.
 router.post('/parse-pdf', requireRole('admin'), uploadPdf.single('pdf'), async (req, res) => {

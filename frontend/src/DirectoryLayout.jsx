@@ -53,6 +53,13 @@ export default function DirectoryLayout() {
           </button>
           <button
             type="button"
+            className={location.pathname === '/dates' ? 'active' : ''}
+            onClick={() => navigate('/dates')}
+          >
+            Dates
+          </button>
+          <button
+            type="button"
             className={location.pathname === '/map' ? 'active' : ''}
             onClick={() => navigate('/map')}
           >
