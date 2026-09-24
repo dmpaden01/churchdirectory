@@ -189,6 +189,17 @@
   border-radius: 999px;
 }
 
+.member-vcard-link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 1px 8px;
+  border-radius: 999px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .member-details {
   font-size: 0.9rem;
   color: var(--text);
@@ -216,6 +227,31 @@
 .family-card-address-link:hover {
   color: var(--accent);
   text-decoration: underline;
+}
+
+.contact-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.contact-link:hover {
+  color: var(--accent);
+}
+
+/* Mouse-driven devices (desktops/laptops) usually have nothing useful to hand
+   a tel: link to, so show phone numbers as plain, selectable text there. */
+@media (hover: hover) and (pointer: fine) {
+  .contact-link-tel {
+    pointer-events: none;
+    text-decoration: none;
+    cursor: text;
+  }
+
+  /* Adding to contacts is a phone thing too. */
+  .member-vcard-link {
+    display: none;
+  }
 }
 
 .family-card-extra {

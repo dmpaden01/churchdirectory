@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { familyPhotoUrl, completeReview, flagReview } from '../api/families';
+import { familyPhotoUrl, individualVCardUrl, completeReview, flagReview } from '../api/families';
 import './FamilyView.css';
 
 // Head/spouse are easily inferred from context (first two adults listed), so
@@ -12,11 +12,24 @@ function changedCls(isChanged) {
   return isChanged ? 'review-changed-text' : undefined;
 }
 
+// Phone numbers and emails as tappable links so they don't have to be copied
+// by hand. tel: links are only live on touch devices - on mouse-driven ones
+// FamilyView.css renders them as plain text (see .contact-link-tel).
+function ContactLink({ kind, value }) {
+  if (kind === 'email') {
+    return <a className="contact-link" href={`mailto:${value}`}>{value}</a>;
+  }
+  const digits = value.replace(/[^\d+]/g, '');
+  return <a className="contact-link contact-link-tel" href={`tel:${digits}`}>{value}</a>;
+}
+
+const CONTACT_KINDS = { cellPhone: 'tel', email: 'email' };
+
 // One person: name, role tag, then whatever details are actually present -
 // dot-separated inline on wider screens, one per line on narrow ones (see
 // .member-details in FamilyView.css). `changedFields` (optional) highlights
 // exactly which of this person's fields an import review flagged.
-function MemberLine({ individual, changedFields }) {
+function MemberLine({ individual, vCardUrl, changedFields }) {
   const details = [
     { key: 'roleStatus', value: individual.roleStatus },
     { key: 'cellPhone', value: individual.cellPhone },
@@ -32,11 +45,16 @@ function MemberLine({ individual, changedFields }) {
       {ROLE_LABELS[individual.role] && (
         <span className="member-role-tag">{ROLE_LABELS[individual.role]}</span>
       )}
+      {(individual.cellPhone || individual.email) && (
+        <a className="member-vcard-link" href={vCardUrl} aria-label={`Add ${individual.firstName} to contacts`}>
+          + Contact
+        </a>
+      )}
       {details.length > 0 && (
         <span className="member-details">
           {details.map((d) => (
             <span key={d.key} className={['member-detail', changedCls(changedFields?.[d.key])].filter(Boolean).join(' ')}>
-              {d.value}
+              {CONTACT_KINDS[d.key] ? <ContactLink kind={CONTACT_KINDS[d.key]} value={d.value} /> : d.value}
             </span>
           ))}
         </span>
@@ -185,6 +203,7 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCo
               <MemberLine
                 individual={individual}
                 key={individual._id || index}
+                vCardUrl={individualVCardUrl(family._id, index)}
                 changedFields={changed?.individuals?.[index]}
               />
             ))}
@@ -213,7 +232,9 @@ export default function FamilyView({ family, isAdmin, onEdit, onBack, onReviewCo
               </>
             )}
             {family.homePhone && (
-              <div className={`family-card-extra ${changedCls(changed?.homePhone) || ''}`}>{family.homePhone}</div>
+              <div className={`family-card-extra ${changedCls(changed?.homePhone) || ''}`}>
+                <ContactLink kind="tel" value={family.homePhone} />
+              </div>
             )}
             {family.anniversary && (
               <div className={`family-card-extra ${changedCls(changed?.anniversary) || ''}`}>

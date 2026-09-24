@@ -10,6 +10,12 @@ export function individualPhotoUrl(familyId, index, individual) {
   return individual?.photo?.contentType ? `${BASE_URL}/${familyId}/individuals/${index}/photo` : undefined;
 }
 
+// Contact card (.vcf) for one individual - opened via a plain link so the
+// phone's contacts app can take over.
+export function individualVCardUrl(familyId, index) {
+  return `${BASE_URL}/${familyId}/individuals/${index}/vcard`;
+}
+
 export async function searchFamilies(search, { allFields = false } = {}) {
   const params = new URLSearchParams();
   if (search) params.set('search', search);

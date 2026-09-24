@@ -16,6 +16,7 @@ import {
 import { matchImagesToFamilies } from '../utils/pdfPhotoMatcher.js';
 import { normalizeAnniversary } from '../utils/anniversary.js';
 import { normalizeBirthday } from '../utils/birthday.js';
+import { buildVCard } from '../utils/vcard.js';
 
 const router = express.Router();
 
@@ -210,6 +211,26 @@ router.get('/:id/individuals/:index/photo', async (req, res) => {
     res.sendFile(photoAbsolutePath(individual.photo.filename), (err) => {
       if (err && !res.headersSent) res.status(404).end();
     });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// GET /api/families/:id/individuals/:index/vcard - one individual as a vCard.
+// Served inline (not as an attachment) so iOS Safari shows its "Create New
+// Contact" sheet directly; Android downloads it and opens it in Contacts.
+router.get('/:id/individuals/:index/vcard', async (req, res) => {
+  try {
+    const family = await Family.findById(req.params.id);
+    const individual = family?.individuals?.[req.params.index];
+    if (!individual) return res.status(404).end();
+    const filename = [individual.firstName, individual.lastName]
+      .join('-')
+      .replace(/[^A-Za-z0-9-]/g, '') || 'contact';
+    res.set('Content-Type', 'text/vcard; charset=utf-8');
+    res.set('Content-Disposition', `inline; filename="${filename}.vcf"`);
+    res.set('Cache-Control', 'private, no-cache');
+    res.send(await buildVCard(family, individual));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
