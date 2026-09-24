@@ -98,9 +98,19 @@
   background: var(--accent-bg);
 }
 
+/* The opposite of the birthday tag (--accent): purple in light mode, green
+   in dark mode (a lighter tint of the brand green, which is too dim to read
+   on the dark background) - the two stay distinct for color-blind viewers. */
 .dates-type-anniversary {
-  color: #db2777;
-  background: rgba(219, 39, 119, 0.1);
+  color: #aa3bff;
+  background: rgba(170, 59, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dates-type-anniversary {
+    color: #4cc185;
+    background: rgba(76, 193, 133, 0.15);
+  }
 }
 
 .dates-name {
