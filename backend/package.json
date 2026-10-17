@@ -9,8 +9,8 @@
     "dev": "nodemon server.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Centerville Church of Christ",
+  "license": "BSD-3-Clause",
   "type": "module",
   "dependencies": {
     "bcryptjs": "^3.0.3",

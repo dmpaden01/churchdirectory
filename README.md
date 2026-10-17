@@ -112,3 +112,7 @@ Notes:
 - `.env` files are intentionally not committed; copy `backend/.env.example` and fill in real values. It's the reference template for anyone setting up a new environment.
 - `backend/scripts/migratePhotosToBlob.js` was a one-time migration from an earlier filesystem-based photo storage design; kept for reference.
 - Registration/approval emails require a working SMTP config (see `backend/.env.example`). If sending fails, the affected request is left in its prior state (not silently marked verified/approved/denied) so it can be retried once email is working.
+
+## License
+
+Copyright (c) 2026, Centerville Church of Christ. Released under the [BSD 3-Clause License](LICENSE).
