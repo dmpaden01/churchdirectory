@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { login } from './api/auth';
+import { login, requestPasswordReset } from './api/auth';
 import RegisterForm from './components/RegisterForm';
 import SiteLogo from './components/SiteLogo';
 import './LoginPage.css';
@@ -10,18 +10,36 @@ export default function LoginPage({ onLoggedIn }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  // Offered once a sign-in attempt fails, for whatever email was entered.
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetMessage, setResetMessage] = useState(null);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
+    setResetMessage(null);
     try {
       const user = await login(username, password);
       onLoggedIn(user);
     } catch (err) {
       setError(err.message);
+      setShowForgot(true);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setSendingReset(true);
+    setError(null);
+    try {
+      setResetMessage(await requestPasswordReset(username));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSendingReset(false);
     }
   };
 
@@ -40,6 +58,7 @@ export default function LoginPage({ onLoggedIn }) {
         <p className="login-subtitle">Sign in to continue</p>
 
         {error && <div className="form-error">{error}</div>}
+        {resetMessage && <div className="form-success">{resetMessage}</div>}
 
         <div className="field-group">
           <label>Email</label>
@@ -65,6 +84,11 @@ export default function LoginPage({ onLoggedIn }) {
         <button type="submit" className="primary-btn" disabled={submitting}>
           {submitting ? 'Signing in...' : 'Sign In'}
         </button>
+        {showForgot && !resetMessage && (
+          <button type="button" className="login-forgot-link" onClick={handleForgotPassword} disabled={sendingReset}>
+            {sendingReset ? 'Sending...' : 'Forgot your password? Email me a reset link'}
+          </button>
+        )}
         <button type="button" onClick={() => setMode('register')}>
           Request an Account
         </button>

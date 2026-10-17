@@ -32,6 +32,14 @@ export async function updateUser(id, { username, firstName, lastName }) {
   return res.json();
 }
 
+export async function sendPasswordResetEmail(id) {
+  const res = await fetch(`${BASE_URL}/${id}/send-password-reset`, { method: 'POST' });
+  if (!res.ok && res.status !== 204) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to send password reset email');
+  }
+}
+
 export async function resetUserPassword(id, newPassword) {
   const res = await fetch(`${BASE_URL}/${id}/password`, {
     method: 'PUT',

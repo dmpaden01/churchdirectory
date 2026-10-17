@@ -62,6 +62,17 @@ export async function register(email, firstName, lastName) {
   return res.json();
 }
 
+export async function requestPasswordReset(email) {
+  const res = await fetch(`${BASE_URL}/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || 'Failed to request a password reset');
+  return body.message;
+}
+
 export async function setPassword(token, password) {
   const res = await fetch(`${BASE_URL}/set-password`, {
     method: 'POST',

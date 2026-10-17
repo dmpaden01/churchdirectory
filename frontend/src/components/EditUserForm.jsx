@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { updateUser } from '../api/users';
+import { updateUser, sendPasswordResetEmail } from '../api/users';
 import ResetPasswordForm from './ResetPasswordForm';
 
 // Inline panel an admin opens from "Edit User" to correct a user's email/name or reset their password.
-export default function EditUserForm({ user, onSaved, onPasswordReset, onCancel }) {
+export default function EditUserForm({ user, onSaved, onPasswordReset, onResetEmailSent, onCancel }) {
   const [username, setUsername] = useState(user.username);
   const [firstName, setFirstName] = useState(user.firstName || '');
   const [lastName, setLastName] = useState(user.lastName || '');
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +24,21 @@ export default function EditUserForm({ user, onSaved, onPasswordReset, onCancel 
       setSaving(false);
     }
   };
+
+  const handleSendReset = async () => {
+    if (!window.confirm(`Email a password reset link to ${user.username}?`)) return;
+    setError(null);
+    setSendingReset(true);
+    try {
+      await sendPasswordResetEmail(user._id);
+      onResetEmailSent();
+    } catch (err) {
+      setError(err.message);
+      setSendingReset(false);
+    }
+  };
+
+  const busy = saving || sendingReset;
 
   return (
     <div className="edit-user-panel">
@@ -47,16 +63,23 @@ export default function EditUserForm({ user, onSaved, onPasswordReset, onCancel 
           <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
         </div>
         <div className="edit-user-form-actions">
-          <button type="submit" className="primary-btn" disabled={saving}>
+          <button type="submit" className="primary-btn" disabled={busy}>
             {saving ? 'Saving...' : 'Save'}
           </button>
-          <button type="button" onClick={onCancel} disabled={saving}>Cancel</button>
-          {!showResetPassword && (
-            <button type="button" onClick={() => setShowResetPassword(true)} disabled={saving}>
-              Reset Password
-            </button>
-          )}
+          <button type="button" onClick={onCancel} disabled={busy}>Cancel</button>
         </div>
+        {!showResetPassword && (
+          <div className="edit-user-form-actions">
+            {user.status === 'active' && (
+              <button type="button" onClick={handleSendReset} disabled={busy}>
+                {sendingReset ? 'Sending...' : 'Send Password Reset Email'}
+              </button>
+            )}
+            <button type="button" onClick={() => setShowResetPassword(true)} disabled={busy}>
+              Set Password Manually
+            </button>
+          </div>
+        )}
       </form>
 
       {showResetPassword && (

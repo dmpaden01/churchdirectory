@@ -264,6 +264,10 @@ export default function UserManagement({ currentUser }) {
                     setEditMessage({ userId: user._id, text: 'User details updated.' });
                     loadUsers();
                   }}
+                  onResetEmailSent={() => {
+                    setEditTargetId(null);
+                    setEditMessage({ userId: user._id, text: `Password reset email sent to "${user.username}".` });
+                  }}
                   onPasswordReset={() => {
                     setEditTargetId(null);
                     setEditMessage({ userId: user._id, text: `Password updated for "${user.username}".` });

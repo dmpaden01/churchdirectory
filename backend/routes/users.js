@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
-import { sendApprovalEmail, sendDenialEmail } from '../utils/mailer.js';
+import { sendApprovalEmail, sendDenialEmail, sendPasswordResetEmail } from '../utils/mailer.js';
 import { EMAIL_RE } from '../utils/email.js';
 
 const router = express.Router();
@@ -165,6 +165,34 @@ router.put('/:id', async (req, res) => {
       lastName: user.lastName,
       createdAt: user.createdAt,
     });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// POST /api/users/:id/send-password-reset - email the user a password reset link (admin only)
+router.post('/:id/send-password-reset', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (user.status !== 'active') {
+      return res.status(400).json({ error: 'Password reset emails can only be sent to active accounts.' });
+    }
+    if (!EMAIL_RE.test(user.username)) {
+      return res.status(400).json({ error: "This user's username isn't an email address." });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // Send first, same reasoning as approve: don't invalidate an existing
+    // setup link in favor of one that never arrived.
+    await sendPasswordResetEmail(user.username, user.firstName, token, '48 hours');
+
+    user.passwordSetupToken = token;
+    user.passwordSetupTokenExpires = new Date(Date.now() + PASSWORD_SETUP_TTL_MS);
+    user.passwordResetSentAt = new Date();
+    await user.save();
+    res.status(204).end();
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

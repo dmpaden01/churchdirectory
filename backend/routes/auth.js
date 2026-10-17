@@ -4,13 +4,16 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { requireAuth, requireRole, AUTH_COOKIE } from '../middleware/auth.js';
-import { sendVerificationEmail, sendAdminNotificationEmail } from '../utils/mailer.js';
+import { sendVerificationEmail, sendAdminNotificationEmail, sendPasswordResetEmail } from '../utils/mailer.js';
 import { EMAIL_RE } from '../utils/email.js';
 
 const router = express.Router();
 
 const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
+const PASSWORD_RESET_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const FORGOT_PASSWORD_MESSAGE = 'If the entered email is registered, a password reset email will be sent to it.';
 
 function cookieOptions() {
   // Secure cookies require HTTPS, so default to on in production but allow an
@@ -244,7 +247,33 @@ router.get('/verify-email', async (req, res) => {
   }
 });
 
-// POST /api/auth/set-password - clicked from the approval email, then submits a new password (public)
+// POST /api/auth/forgot-password - email a password reset link (public)
+// Always responds the same way, and sends in the background, so neither the
+// response nor its timing reveals whether the email belongs to an account.
+router.post('/forgot-password', async (req, res) => {
+  const email = (req.body.email || '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address.' });
+  }
+  res.json({ message: FORGOT_PASSWORD_MESSAGE });
+
+  try {
+    const user = await User.findOne({ username: email, status: 'active' });
+    if (!user) return;
+    if (user.passwordResetSentAt && Date.now() - user.passwordResetSentAt < PASSWORD_RESET_COOLDOWN_MS) return;
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.passwordSetupToken = token;
+    user.passwordSetupTokenExpires = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+    user.passwordResetSentAt = new Date();
+    await user.save();
+    await sendPasswordResetEmail(user.username, user.firstName, token, '1 hour');
+  } catch (err) {
+    console.error(`Failed to send password reset email to ${email}:`, err.message);
+  }
+});
+
+// POST /api/auth/set-password - clicked from an approval or password reset email, then submits a new password (public)
 router.post('/set-password', async (req, res) => {
   try {
     const { token, password } = req.body;
@@ -257,7 +286,7 @@ router.post('/set-password', async (req, res) => {
 
     const user = await User.findOne({ passwordSetupToken: token });
     if (!user || user.passwordSetupTokenExpires < new Date()) {
-      return res.status(400).json({ error: 'This link is invalid or has expired. Please contact an admin.' });
+      return res.status(400).json({ error: 'This link is invalid or has expired. Please request a new password reset email, or contact an admin.' });
     }
 
     user.passwordHash = await bcrypt.hash(password, 12);

@@ -69,6 +69,20 @@ export function sendApprovalEmail(to, firstName, token) {
   });
 }
 
+export function sendPasswordResetEmail(to, firstName, token, expiresInText) {
+  const url = `${process.env.FRONTEND_PUBLIC_URL}/?setPasswordToken=${encodeURIComponent(token)}`;
+  return sendMail({
+    to,
+    subject: 'Reset your Church Directory password',
+    html: `
+      <p style="font-family:sans-serif;">Hi${firstName ? ` ${firstName}` : ''},</p>
+      <p style="font-family:sans-serif;">We received a request to reset the password for your Church Directory account. Click below to choose a new password:</p>
+      ${button(url, 'Reset Password')}
+      <p style="font-family:sans-serif;font-size:0.85em;color:#666;">This link expires in ${expiresInText}. If you didn't request a password reset, you can ignore this email - your password won't change.</p>
+    `,
+  });
+}
+
 export function sendAdminNotificationEmail(to, registrant) {
   const url = `${process.env.FRONTEND_PUBLIC_URL}/users`;
   return sendMail({

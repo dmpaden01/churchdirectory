@@ -20,6 +20,9 @@ const userSchema = new Schema(
     emailVerifyTokenExpires: { type: Date },
     passwordSetupToken: { type: String },
     passwordSetupTokenExpires: { type: Date },
+    // When the last password reset email went out - throttles the public
+    // "forgot password" form so it can't be used to flood someone's inbox.
+    passwordResetSentAt: { type: Date },
     // Admins can opt out of "new registration awaiting approval" emails; new
     // admins default to receiving them.
     receiveAdminNotifications: { type: Boolean, default: true },

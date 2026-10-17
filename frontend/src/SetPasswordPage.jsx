@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { setPassword } from './api/auth';
 import './LoginPage.css';
 
-// Landed on via the "Set Password" link in the approval email (?setPasswordToken=...).
+// Landed on via the link in an approval or password reset email (?setPasswordToken=...).
 export default function SetPasswordPage({ token, onDone }) {
   const [password, setPasswordValue] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -44,7 +44,7 @@ export default function SetPasswordPage({ token, onDone }) {
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>Set Your Password</h1>
-        <p className="login-subtitle">Choose a password to finish setting up your account.</p>
+        <p className="login-subtitle">Choose a new password for your account.</p>
 
         {error && <div className="form-error">{error}</div>}
 
