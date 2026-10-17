@@ -6,15 +6,28 @@ export async function listUsers() {
   return res.json();
 }
 
-export async function createUser({ username, password, role }) {
+export async function createUser({ username, password, role, firstName, lastName }) {
   const res = await fetch(BASE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password, role }),
+    body: JSON.stringify({ username, password, role, firstName, lastName }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || 'Failed to create user');
+  }
+  return res.json();
+}
+
+export async function updateUser(id, { username, firstName, lastName }) {
+  const res = await fetch(`${BASE_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, firstName, lastName }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to update user');
   }
   return res.json();
 }

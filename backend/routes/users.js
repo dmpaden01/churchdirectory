@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { sendApprovalEmail, sendDenialEmail } from '../utils/mailer.js';
+import { EMAIL_RE } from '../utils/email.js';
 
 const router = express.Router();
 
@@ -25,9 +26,9 @@ router.get('/', async (req, res) => {
 // POST /api/users - create a new user directly (admin only)
 router.post('/', async (req, res) => {
   try {
-    const { username, password, role } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Username and password are required.' });
+    const { username, password, role, firstName, lastName } = req.body;
+    if (!username || !password || !firstName?.trim() || !lastName?.trim()) {
+      return res.status(400).json({ error: 'Username, password, and first and last name are required.' });
     }
     if (password.length < 8) {
       return res.status(400).json({ error: 'Password must be at least 8 characters.' });
@@ -41,8 +42,22 @@ router.post('/', async (req, res) => {
     if (existing) return res.status(409).json({ error: 'That username is already taken.' });
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({ username: normalizedUsername, passwordHash, role, status: 'active' });
-    res.status(201).json({ _id: user._id, username: user.username, role: user.role, createdAt: user.createdAt });
+    const user = await User.create({
+      username: normalizedUsername,
+      passwordHash,
+      role,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      status: 'active',
+    });
+    res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      createdAt: user.createdAt,
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -109,6 +124,47 @@ router.put('/:id/role', async (req, res) => {
     const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true, select: USER_FIELDS });
     if (!user) return res.status(404).json({ error: 'User not found' });
     res.json(user);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PUT /api/users/:id - correct a user's email/username and first/last name (admin only)
+router.put('/:id', async (req, res) => {
+  try {
+    const username = (req.body.username || '').trim().toLowerCase();
+    const firstName = (req.body.firstName || '').trim();
+    const lastName = (req.body.lastName || '').trim();
+    if (!username || !firstName || !lastName) {
+      return res.status(400).json({ error: 'Email, first name, and last name are required.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Only validate the format on change, so older non-email usernames (e.g.
+    // the seeded admin) can still have their names corrected.
+    if (username !== user.username) {
+      if (!EMAIL_RE.test(username)) {
+        return res.status(400).json({ error: 'Please enter a valid email address.' });
+      }
+      const existing = await User.findOne({ username });
+      if (existing) return res.status(409).json({ error: 'That email address is already in use.' });
+    }
+
+    user.username = username;
+    user.firstName = firstName;
+    user.lastName = lastName;
+    await user.save();
+    res.json({
+      _id: user._id,
+      username: user.username,
+      role: user.role,
+      status: user.status,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      createdAt: user.createdAt,
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

@@ -5,12 +5,12 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { requireAuth, requireRole, AUTH_COOKIE } from '../middleware/auth.js';
 import { sendVerificationEmail, sendAdminNotificationEmail } from '../utils/mailer.js';
+import { EMAIL_RE } from '../utils/email.js';
 
 const router = express.Router();
 
 const COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function cookieOptions() {
   // Secure cookies require HTTPS, so default to on in production but allow an
@@ -76,7 +76,7 @@ router.post('/login', async (req, res) => {
     );
 
     res.cookie(AUTH_COOKIE, token, cookieOptions());
-    res.json({ username: user.username, role: user.role });
+    res.json({ id: user._id, username: user.username, role: user.role });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -91,8 +91,11 @@ router.post('/logout', (req, res) => {
 // GET /api/auth/me
 router.get('/me', requireAuth, async (req, res) => {
   const user = await User.findById(req.user.id);
+  // Username comes from the db rather than the token, since an admin can
+  // change it (it's the account's email address) mid-session.
   res.json({
-    username: req.user.username,
+    id: user._id,
+    username: user.username,
     role: req.user.role,
     receiveAdminNotifications: user.receiveAdminNotifications,
   });

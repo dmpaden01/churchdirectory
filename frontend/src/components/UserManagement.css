@@ -203,27 +203,42 @@
   letter-spacing: 0.02em;
 }
 
+.edit-user-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.edit-user-form,
 .reset-password-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
   max-width: 280px;
-  padding-top: 4px;
-  border-top: 1px solid var(--border);
 }
 
+.edit-user-panel .reset-password-form {
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.edit-user-form .field-group,
 .reset-password-form .field-group {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
+.edit-user-form label,
 .reset-password-form label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-h);
 }
 
+.edit-user-form input,
 .reset-password-form input {
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -233,11 +248,14 @@
   color: var(--text-h);
 }
 
+.edit-user-form-actions,
 .reset-password-form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
+.edit-user-form-actions button:not(.primary-btn),
 .reset-password-form-actions button:not(.primary-btn) {
   border: 1px solid var(--border);
   border-radius: 6px;

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { listUsers, createUser, deleteUser, approveUser, denyUser, updateUserRole } from '../api/users';
-import ResetPasswordForm from './ResetPasswordForm';
+import EditUserForm from './EditUserForm';
 import './UserManagement.css';
 
-const emptyForm = { username: '', password: '', role: 'user' };
+const emptyForm = { username: '', password: '', role: 'user', firstName: '', lastName: '' };
 
 const STATUS_LABELS = {
   pending_verification: 'Awaiting Email Verification',
@@ -19,8 +19,8 @@ export default function UserManagement({ currentUser }) {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
-  const [resetTargetId, setResetTargetId] = useState(null);
-  const [resetMessage, setResetMessage] = useState(null);
+  const [editTargetId, setEditTargetId] = useState(null);
+  const [editMessage, setEditMessage] = useState(null);
   const [decidingId, setDecidingId] = useState(null);
   const [decisionError, setDecisionError] = useState(null);
   const [roleUpdatingId, setRoleUpdatingId] = useState(null);
@@ -115,7 +115,7 @@ export default function UserManagement({ currentUser }) {
         <button
           type="button"
           className="primary-btn"
-          onClick={() => { setShowForm((s) => !s); setResetTargetId(null); }}
+          onClick={() => { setShowForm((s) => !s); setEditTargetId(null); }}
         >
           {showForm ? 'Cancel' : '+ Add User'}
         </button>
@@ -124,6 +124,14 @@ export default function UserManagement({ currentUser }) {
       {showForm && (
         <form className="user-form" onSubmit={handleCreate}>
           {formError && <div className="form-error">{formError}</div>}
+          <div className="field-group">
+            <label>First Name *</label>
+            <input type="text" value={form.firstName} onChange={setField('firstName')} required />
+          </div>
+          <div className="field-group">
+            <label>Last Name *</label>
+            <input type="text" value={form.lastName} onChange={setField('lastName')} required />
+          </div>
           <div className="field-group">
             <label>Username *</label>
             <input type="text" value={form.username} onChange={setField('username')} required />
@@ -206,7 +214,7 @@ export default function UserManagement({ currentUser }) {
                   <label
                     className="role-toggle"
                     title={
-                      user.username === currentUser.username
+                      user._id === currentUser.id
                         ? 'You cannot change your own role'
                         : `Switch to ${user.role === 'admin' ? 'User' : 'Admin'}`
                     }
@@ -214,7 +222,7 @@ export default function UserManagement({ currentUser }) {
                     <input
                       type="checkbox"
                       checked={user.role === 'admin'}
-                      disabled={user.username === currentUser.username || roleUpdatingId === user._id}
+                      disabled={user._id === currentUser.id || roleUpdatingId === user._id}
                       onChange={() => handleRoleToggle(user)}
                     />
                     <span className="role-toggle-track">
@@ -230,30 +238,35 @@ export default function UserManagement({ currentUser }) {
                   <button
                     type="button"
                     onClick={() => {
-                      setResetTargetId(resetTargetId === user._id ? null : user._id);
-                      setResetMessage(null);
+                      setEditTargetId(editTargetId === user._id ? null : user._id);
+                      setEditMessage(null);
                       setShowForm(false);
                     }}
                   >
-                    Reset Password
+                    Edit User
                   </button>
-                  {user.username !== currentUser.username && (
+                  {user._id !== currentUser.id && (
                     <button type="button" className="danger-btn-outline" onClick={() => handleDelete(user)}>Delete</button>
                   )}
                 </div>
               </div>
 
-              {resetMessage?.userId === user._id && (
-                <div className="form-success">Password updated for "{user.username}".</div>
+              {editMessage?.userId === user._id && (
+                <div className="form-success">{editMessage.text}</div>
               )}
 
-              {resetTargetId === user._id && (
-                <ResetPasswordForm
-                  userId={user._id}
-                  onCancel={() => setResetTargetId(null)}
-                  onDone={() => {
-                    setResetTargetId(null);
-                    setResetMessage({ userId: user._id });
+              {editTargetId === user._id && (
+                <EditUserForm
+                  user={user}
+                  onCancel={() => setEditTargetId(null)}
+                  onSaved={() => {
+                    setEditTargetId(null);
+                    setEditMessage({ userId: user._id, text: 'User details updated.' });
+                    loadUsers();
+                  }}
+                  onPasswordReset={() => {
+                    setEditTargetId(null);
+                    setEditMessage({ userId: user._id, text: `Password updated for "${user.username}".` });
                   }}
                 />
               )}
