@@ -5,6 +5,32 @@ import './UserManagement.css';
 
 const emptyForm = { username: '', password: '', role: 'user', firstName: '', lastName: '' };
 
+const SORT_STORAGE_KEY = 'users.sortByLastName';
+
+function loadSortByLastName() {
+  try {
+    return localStorage.getItem(SORT_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+// "First Last", or "Last, First" when sorting by last name. Accounts with no
+// name on file (e.g. the seeded admin) fall back to their username.
+function displayName(user, byLastName) {
+  const first = user.firstName || '';
+  const last = user.lastName || '';
+  if (!first && !last) return user.username;
+  if (byLastName) return first && last ? `${last}, ${first}` : last || first;
+  return `${first} ${last}`.trim();
+}
+
+function sortUsers(users, byLastName) {
+  return [...users].sort((a, b) =>
+    displayName(a, byLastName).localeCompare(displayName(b, byLastName), undefined, { sensitivity: 'base' }),
+  );
+}
+
 const STATUS_LABELS = {
   pending_verification: 'Awaiting Email Verification',
   denied: 'Denied',
@@ -25,6 +51,7 @@ export default function UserManagement({ currentUser }) {
   const [decisionError, setDecisionError] = useState(null);
   const [roleUpdatingId, setRoleUpdatingId] = useState(null);
   const [roleError, setRoleError] = useState(null);
+  const [sortByLastName, setSortByLastName] = useState(loadSortByLastName);
 
   const loadUsers = () => {
     setLoading(true);
@@ -105,8 +132,19 @@ export default function UserManagement({ currentUser }) {
     }
   };
 
-  const pending = users.filter((u) => u.status === 'pending_approval');
-  const others = users.filter((u) => u.status !== 'pending_approval');
+  const handleSortToggle = () => {
+    const next = !sortByLastName;
+    setSortByLastName(next);
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, String(next));
+    } catch {
+      // Just won't be remembered next visit.
+    }
+  };
+
+  const sorted = sortUsers(users, sortByLastName);
+  const pending = sorted.filter((u) => u.status === 'pending_approval');
+  const others = sorted.filter((u) => u.status !== 'pending_approval');
 
   return (
     <div className="user-management">
@@ -120,6 +158,14 @@ export default function UserManagement({ currentUser }) {
           {showForm ? 'Cancel' : '+ Add User'}
         </button>
       </div>
+
+      <label className="toggle-switch user-sort-toggle">
+        <input type="checkbox" checked={sortByLastName} onChange={handleSortToggle} />
+        <span className="toggle-switch-track">
+          <span className="toggle-switch-thumb" />
+        </span>
+        <span className="user-sort-toggle-text">Sort by last name</span>
+      </label>
 
       {showForm && (
         <form className="user-form" onSubmit={handleCreate}>
@@ -171,7 +217,7 @@ export default function UserManagement({ currentUser }) {
               <li key={user._id} className="user-list-item">
                 <div className="user-list-row">
                   <div className="user-list-info">
-                    <strong>{user.firstName} {user.lastName}</strong>
+                    <strong>{displayName(user, sortByLastName)}</strong>
                     <span className="pending-email">{user.username}</span>
                   </div>
                   <div className="user-list-actions">
@@ -207,12 +253,12 @@ export default function UserManagement({ currentUser }) {
             <li key={user._id} className="user-list-item">
               <div className="user-list-row">
                 <div className="user-list-info">
-                  <strong>{user.firstName || user.lastName ? `${user.firstName} ${user.lastName}`.trim() : user.username}</strong>
+                  <strong>{displayName(user, sortByLastName)}</strong>
                   {(user.firstName || user.lastName) && (
                     <span className="pending-email">{user.username}</span>
                   )}
                   <label
-                    className="role-toggle"
+                    className="toggle-switch"
                     title={
                       user._id === currentUser.id
                         ? 'You cannot change your own role'
@@ -225,10 +271,10 @@ export default function UserManagement({ currentUser }) {
                       disabled={user._id === currentUser.id || roleUpdatingId === user._id}
                       onChange={() => handleRoleToggle(user)}
                     />
-                    <span className="role-toggle-track">
-                      <span className="role-toggle-thumb" />
+                    <span className="toggle-switch-track">
+                      <span className="toggle-switch-thumb" />
                     </span>
-                    <span className="role-toggle-text">{user.role === 'admin' ? 'Admin' : 'User'}</span>
+                    <span className="toggle-switch-text">{user.role === 'admin' ? 'Admin' : 'User'}</span>
                   </label>
                   {STATUS_LABELS[user.status] && (
                     <span className="status-badge">{STATUS_LABELS[user.status]}</span>

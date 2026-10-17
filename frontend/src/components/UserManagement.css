@@ -10,6 +10,15 @@
   color: var(--text-h);
 }
 
+.user-sort-toggle {
+  margin-bottom: 16px;
+}
+
+.user-sort-toggle-text {
+  font-size: 0.9rem;
+  color: var(--text-h);
+}
+
 .user-form {
   display: flex;
   flex-direction: column;
@@ -92,7 +101,7 @@
   color: var(--text-h);
 }
 
-.role-toggle {
+.toggle-switch {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -100,14 +109,14 @@
   user-select: none;
 }
 
-.role-toggle input {
+.toggle-switch input {
   position: absolute;
   opacity: 0;
   width: 0;
   height: 0;
 }
 
-.role-toggle-track {
+.toggle-switch-track {
   display: inline-flex;
   align-items: center;
   width: 34px;
@@ -119,12 +128,12 @@
   flex-shrink: 0;
 }
 
-.role-toggle input:checked + .role-toggle-track {
+.toggle-switch input:checked + .toggle-switch-track {
   background: var(--accent);
   border-color: var(--accent);
 }
 
-.role-toggle-thumb {
+.toggle-switch-thumb {
   width: 12px;
   height: 12px;
   margin-left: 2px;
@@ -133,21 +142,21 @@
   transition: transform 0.15s ease;
 }
 
-.role-toggle input:checked + .role-toggle-track .role-toggle-thumb {
+.toggle-switch input:checked + .toggle-switch-track .toggle-switch-thumb {
   transform: translateX(16px);
   background: #fff;
 }
 
-.role-toggle input:disabled + .role-toggle-track {
+.toggle-switch input:disabled + .toggle-switch-track {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.role-toggle input:disabled ~ .role-toggle-text {
+.toggle-switch input:disabled ~ .toggle-switch-text {
   opacity: 0.5;
 }
 
-.role-toggle-text {
+.toggle-switch-text {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
